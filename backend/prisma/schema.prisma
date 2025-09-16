@@ -1,0 +1,348 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  name        String
+  avatar      String?
+  bio         String?
+  password    String
+  isTeacher   Boolean  @default(false)
+  isLearner   Boolean  @default(true)
+  rating      Float    @default(0)
+  reviewCount Int      @default(0)
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Location
+  latitude  Float
+  longitude Float
+  address   String
+  city      String
+  country   String
+
+  // Relations
+  profile         UserProfile?
+  teacherSkills   UserSkill[]      @relation("TeacherSkills")
+  learnerSkills   UserSkill[]      @relation("LearnerSkills")
+  teacherMatches  Match[]          @relation("TeacherMatches")
+  learnerMatches  Match[]          @relation("LearnerMatches")
+  sentRequests    MatchRequest[]   @relation("SentRequests")
+  receivedRequests MatchRequest[]  @relation("ReceivedRequests")
+  teacherSessions Session[]        @relation("TeacherSessions")
+  learnerSessions Session[]        @relation("LearnerSessions")
+  sentMessages    Message[]        @relation("SentMessages")
+  conversations   ConversationParticipant[]
+  reviews         Review[]         @relation("ReviewAuthor")
+  receivedReviews Review[]         @relation("ReviewSubject")
+  payments        Payment[]
+  notifications   Notification[]
+
+  @@map("users")
+}
+
+model UserProfile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  maxDistance       Int      @default(25) // kilometers
+  preferredMeetingType String @default("both") // "in-person", "online", "both"
+  languagePreferences String[] @default([])
+  ageRangeMin       Int?
+  ageRangeMax       Int?
+  timezone          String   @default("UTC")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  availability  Availability[]
+  socialLinks   SocialLink[]
+
+  @@map("user_profiles")
+}
+
+model Availability {
+  id          String   @id @default(cuid())
+  profileId   String
+  dayOfWeek   Int      // 0-6, Sunday = 0
+  startTime   String   // HH:MM format
+  endTime     String   // HH:MM format
+  timezone    String
+  createdAt   DateTime @default(now())
+
+  // Relations
+  profile UserProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("availability")
+}
+
+model SocialLink {
+  id        String   @id @default(cuid())
+  profileId String
+  platform  String   // "linkedin", "github", "website", "instagram"
+  url       String
+  createdAt DateTime @default(now())
+
+  // Relations
+  profile UserProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("social_links")
+}
+
+model SkillCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String
+  icon        String
+  color       String
+  parentId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  parent   SkillCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children SkillCategory[] @relation("CategoryHierarchy")
+  skills   Skill[]
+
+  @@map("skill_categories")
+}
+
+model Skill {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  categoryId  String
+  tags        String[] @default([])
+  icon        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  category    SkillCategory @relation(fields: [categoryId], references: [id])
+  userSkills  UserSkill[]
+  matches     Match[]
+  requests    MatchRequest[]
+  sessions    Session[]
+
+  @@unique([name, categoryId])
+  @@map("skills")
+}
+
+model UserSkill {
+  id             String   @id @default(cuid())
+  userId         String
+  skillId        String
+  role           String   // "teacher" or "learner"
+  level          String   // "beginner", "intermediate", "advanced", "expert"
+  experience     String?
+  hourlyRate     Float?
+  currency       String?  @default("USD")
+  certifications String[] @default([])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  user    User  @relation("TeacherSkills", fields: [userId], references: [id], onDelete: Cascade)
+  learner User? @relation("LearnerSkills", fields: [userId], references: [id], onDelete: Cascade)
+  skill   Skill @relation(fields: [skillId], references: [id])
+
+  @@unique([userId, skillId, role])
+  @@map("user_skills")
+}
+
+model Match {
+  id         String   @id @default(cuid())
+  learnerId  String
+  teacherId  String
+  skillId    String
+  status     String   @default("pending") // "pending", "accepted", "declined", "expired", "blocked"
+  matchScore Float
+  distance   Float    // in kilometers
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  learner  User      @relation("LearnerMatches", fields: [learnerId], references: [id])
+  teacher  User      @relation("TeacherMatches", fields: [teacherId], references: [id])
+  skill    Skill     @relation(fields: [skillId], references: [id])
+  requests MatchRequest[]
+  sessions Session[]
+
+  @@unique([learnerId, teacherId, skillId])
+  @@map("matches")
+}
+
+model MatchRequest {
+  id               String   @id @default(cuid())
+  matchId          String
+  fromUserId       String
+  toUserId         String
+  skillId          String
+  message          String?
+  status           String   @default("pending") // "pending", "accepted", "declined", "cancelled"
+  proposedSchedules Json[]  @default([])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  match    Match @relation(fields: [matchId], references: [id])
+  fromUser User  @relation("SentRequests", fields: [fromUserId], references: [id])
+  toUser   User  @relation("ReceivedRequests", fields: [toUserId], references: [id])
+  skill    Skill @relation(fields: [skillId], references: [id])
+
+  @@map("match_requests")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  matchId      String
+  teacherId    String
+  learnerId    String
+  skillId      String
+  scheduledAt  DateTime
+  duration     Int      // in minutes
+  status       String   @default("scheduled") // "scheduled", "confirmed", "in_progress", "completed", "cancelled", "no_show"
+  meetingType  String   // "in-person" or "online"
+  location     Json?    // address, coordinates, or meeting URL
+  price        Float
+  currency     String   @default("USD")
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  match    Match     @relation(fields: [matchId], references: [id])
+  teacher  User      @relation("TeacherSessions", fields: [teacherId], references: [id])
+  learner  User      @relation("LearnerSessions", fields: [learnerId], references: [id])
+  skill    Skill     @relation(fields: [skillId], references: [id])
+  reviews  Review[]
+  payments Payment[]
+
+  @@map("sessions")
+}
+
+model Review {
+  id             String   @id @default(cuid())
+  sessionId      String
+  reviewerId     String
+  revieweeId     String
+  rating         Int      // 1-5
+  comment        String?
+  skills         Json     // communication, knowledge, patience, punctuality scores
+  wouldRecommend Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  // Relations
+  session   Session @relation(fields: [sessionId], references: [id])
+  reviewer  User    @relation("ReviewAuthor", fields: [reviewerId], references: [id])
+  reviewee  User    @relation("ReviewSubject", fields: [revieweeId], references: [id])
+
+  @@unique([sessionId, reviewerId])
+  @@map("reviews")
+}
+
+model Payment {
+  id                     String   @id @default(cuid())
+  sessionId              String
+  userId                 String
+  amount                 Float
+  currency               String   @default("USD")
+  status                 String   @default("pending") // "pending", "succeeded", "failed", "cancelled", "refunded"
+  paymentMethod          String?
+  stripePaymentIntentId  String?
+  refundAmount           Float?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  // Relations
+  session Session @relation(fields: [sessionId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@map("payments")
+}
+
+model Conversation {
+  id           String   @id @default(cuid())
+  type         String   @default("direct") // "direct", "group", "support"
+  title        String?
+  lastMessageId String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  id             String   @id @default(cuid())
+  conversationId String
+  userId         String
+  unreadCount    Int      @default(0)
+  joinedAt       DateTime @default(now())
+
+  // Relations
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@map("conversation_participants")
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  senderId       String
+  content        String
+  type           String   @default("text") // "text", "image", "file", "system", "session_proposal"
+  attachments    Json[]   @default([])
+  metadata       Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  conversation Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User          @relation("SentMessages", fields: [senderId], references: [id])
+  readBy       MessageRead[]
+
+  @@map("messages")
+}
+
+model MessageRead {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+
+  // Relations
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@map("message_reads")
+}
+
+model Notification {
+  id      String   @id @default(cuid())
+  userId  String
+  type    String   // "new_message", "new_match", "session_reminder", "payment_received", "review_received"
+  title   String
+  body    String
+  data    Json?
+  read    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
