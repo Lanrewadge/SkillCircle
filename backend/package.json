@@ -15,7 +15,9 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:reset": "prisma migrate reset"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -56,6 +58,7 @@
     "@types/jest": "^29.5.5",
     "ts-jest": "^29.1.1",
     "supertest": "^6.3.3",
-    "@types/supertest": "^2.0.14"
+    "@types/supertest": "^2.0.14",
+    "tsx": "^4.7.0"
   }
 }
