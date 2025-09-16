@@ -87,3 +87,6 @@ web-build/
 # Generated files
 generated/
 *.generated.*
+
+# Development tracking
+DEVELOPMENT_LOG.md
