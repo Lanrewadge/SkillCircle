@@ -37,7 +37,7 @@
     "date-fns": "^3.6.0",
     "react-hot-toast": "^2.4.0",
     "js-cookie": "^3.0.5",
-    "@skill-circle/shared": "workspace:*"
+    "@skill-circle/shared": "file:../shared"
   },
   "devDependencies": {
     "@types/node": "^20.12.0",

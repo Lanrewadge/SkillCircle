@@ -10,6 +10,7 @@
     "shared"
   ],
   "scripts": {
+    "setup": "node setup.js",
     "dev": "concurrently \"npm run dev:web\" \"npm run dev:backend\"",
     "dev:web": "cd web && npm run dev",
     "dev:mobile": "cd mobile && npm run start",
@@ -23,7 +24,9 @@
     "install:workspaces": "npm install --workspaces",
     "test": "npm run test --workspaces",
     "lint": "npm run lint --workspaces",
-    "clean": "rm -rf node_modules && npm run clean --workspaces"
+    "clean": "rm -rf node_modules && npm run clean --workspaces",
+    "db:reset": "cd backend && npm run db:reset",
+    "db:seed": "cd backend && npm run db:seed"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
