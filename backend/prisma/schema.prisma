@@ -31,8 +31,7 @@ model User {
 
   // Relations
   profile         UserProfile?
-  teacherSkills   UserSkill[]      @relation("TeacherSkills")
-  learnerSkills   UserSkill[]      @relation("LearnerSkills")
+  userSkills      UserSkill[]
   teacherMatches  Match[]          @relation("TeacherMatches")
   learnerMatches  Match[]          @relation("LearnerMatches")
   sentRequests    MatchRequest[]   @relation("SentRequests")
@@ -136,23 +135,35 @@ model Skill {
   @@map("skills")
 }
 
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum UserSkillRole {
+  TEACHER
+  LEARNER
+}
+
 model UserSkill {
-  id             String   @id @default(cuid())
+  id             String        @id @default(cuid())
   userId         String
   skillId        String
-  role           String   // "teacher" or "learner"
-  level          String   // "beginner", "intermediate", "advanced", "expert"
+  role           UserSkillRole
+  level          SkillLevel
   experience     String?
   hourlyRate     Float?
-  currency       String?  @default("USD")
-  certifications String[] @default([])
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  currency       String?       @default("USD")
+  certifications String[]      @default([])
+  isActive       Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   // Relations
-  user    User  @relation("TeacherSkills", fields: [userId], references: [id], onDelete: Cascade)
-  learner User? @relation("LearnerSkills", fields: [userId], references: [id], onDelete: Cascade)
-  skill   Skill @relation(fields: [skillId], references: [id])
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill Skill @relation(fields: [skillId], references: [id])
 
   @@unique([userId, skillId, role])
   @@map("user_skills")
