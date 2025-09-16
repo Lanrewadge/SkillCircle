@@ -37,7 +37,7 @@
     "stripe": "^13.6.0",
     "nodemailer": "^6.9.6",
     "redis": "^4.6.8",
-    "@skill-circle/shared": "workspace:*"
+    "@skill-circle/shared": "file:../shared"
   },
   "devDependencies": {
     "@types/express": "^4.17.18",
