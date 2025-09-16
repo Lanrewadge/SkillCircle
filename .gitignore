@@ -87,7 +87,3 @@ web-build/
 # Generated files
 generated/
 *.generated.*
-
-# Claude Code files
-.claude/
-*.claude
