@@ -118,7 +118,7 @@ skill-circle/
 8. **Mobile Preparation**: Set up React Native structure when Node 18+ available
 
 ### Notes
-- All Claude Code files (.claude) are excluded from repositories
+- Development configuration files are excluded from repositories
 - SSH authentication configured for GitLab
 - Both repositories are synchronized
 - Frontend is production-ready with mock data fallback
