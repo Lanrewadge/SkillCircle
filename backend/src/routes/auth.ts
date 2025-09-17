@@ -50,11 +50,11 @@ router.post('/register', [
         username,
         name: `${firstName} ${lastName}`,
         password: hashedPassword,
-        latitude: latitude || 0,
-        longitude: longitude || 0,
-        address: location || '',
-        city: location?.split(',')[0] || '',
-        country: location?.split(',').pop()?.trim() || '',
+        latitude: latitude || 40.7128,
+        longitude: longitude || -74.0060,
+        address: location || 'New York, NY',
+        city: location?.split(',')[0] || 'New York',
+        country: location?.split(',').pop()?.trim() || 'USA',
         profile: {
           create: {}
         }
@@ -66,6 +66,8 @@ router.post('/register', [
         name: true,
         avatar: true,
         verified: true,
+        isTeacher: true,
+        isLearner: true,
         createdAt: true
       }
     });

@@ -1,25 +1,9 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import axios from 'axios'
+import { User } from '@skill-circle/shared'
+import { authApi } from '@/lib/api'
 import Cookies from 'js-cookie'
 import toast from 'react-hot-toast'
-
-interface User {
-  id: string
-  email: string
-  username: string
-  name: string
-  avatar?: string
-  bio?: string
-  verified: boolean
-  isTeacher: boolean
-  isLearner: boolean
-  rating: number
-  reviewCount: number
-  city?: string
-  country?: string
-  createdAt: string
-}
 
 interface AuthState {
   user: User | null
@@ -37,19 +21,17 @@ interface AuthState {
 
 interface RegisterData {
   email: string
-  username: string
-  firstName: string
-  lastName: string
+  name: string
   password: string
-  location?: string
-  latitude?: number
-  longitude?: number
+  isTeacher?: boolean
+  isLearner?: boolean
+  address: string
+  city: string
+  country: string
+  latitude: number
+  longitude: number
+  bio?: string
 }
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1'
-
-// Configure axios defaults
-axios.defaults.baseURL = API_URL
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -62,18 +44,10 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         set({ isLoading: true })
         try {
-          const response = await axios.post('/auth/login', {
-            email,
-            password
-          })
-
-          const { user, token } = response.data.data
-
-          // Set token in axios headers
-          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+          const { user, token } = await authApi.login(email, password)
 
           // Store token in cookie
-          Cookies.set('token', token, { expires: 7 })
+          Cookies.set('authToken', token, { expires: 7 })
 
           set({
             user,
@@ -85,7 +59,7 @@ export const useAuthStore = create<AuthState>()(
           toast.success('Successfully logged in!')
           return true
         } catch (error: any) {
-          const message = error.response?.data?.error?.message || 'Login failed'
+          const message = error.response?.data?.message || error.message || 'Login failed'
           toast.error(message)
           set({ isLoading: false })
           return false
@@ -95,15 +69,10 @@ export const useAuthStore = create<AuthState>()(
       register: async (userData: RegisterData) => {
         set({ isLoading: true })
         try {
-          const response = await axios.post('/auth/register', userData)
-
-          const { user, token } = response.data.data
-
-          // Set token in axios headers
-          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+          const { user, token } = await authApi.register(userData)
 
           // Store token in cookie
-          Cookies.set('token', token, { expires: 7 })
+          Cookies.set('authToken', token, { expires: 7 })
 
           set({
             user,
@@ -115,7 +84,7 @@ export const useAuthStore = create<AuthState>()(
           toast.success('Account created successfully!')
           return true
         } catch (error: any) {
-          const message = error.response?.data?.error?.message || 'Registration failed'
+          const message = error.response?.data?.message || error.message || 'Registration failed'
           toast.error(message)
           set({ isLoading: false })
           return false
@@ -123,11 +92,10 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
-        // Remove token from axios headers
-        delete axios.defaults.headers.common['Authorization']
+        authApi.logout()
 
         // Remove token from cookie
-        Cookies.remove('token')
+        Cookies.remove('authToken')
 
         set({
           user: null,
@@ -148,7 +116,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       checkAuth: async () => {
-        const token = Cookies.get('token')
+        const token = Cookies.get('authToken')
 
         if (!token) {
           set({ isAuthenticated: false, user: null, token: null })
@@ -156,11 +124,7 @@ export const useAuthStore = create<AuthState>()(
         }
 
         try {
-          // Set token in axios headers
-          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-
-          const response = await axios.get('/auth/me')
-          const user = response.data.data
+          const user = await authApi.profile()
 
           set({
             user,
@@ -169,8 +133,7 @@ export const useAuthStore = create<AuthState>()(
           })
         } catch (error) {
           // Token is invalid, clear it
-          Cookies.remove('token')
-          delete axios.defaults.headers.common['Authorization']
+          Cookies.remove('authToken')
 
           set({
             user: null,
