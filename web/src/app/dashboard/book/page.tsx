@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { Calendar, Clock, MapPin, User, Star, CreditCard, MessageCircle, Video, Shield } from 'lucide-react'
+import { Calendar, Clock, MapPin, User, Star, CreditCard, MessageCircle, Video, Shield, DollarSign, Award, Users, CheckCircle, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -14,7 +14,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useAuthStore } from '@/stores/authStore'
-import { format, addDays, setHours, setMinutes } from 'date-fns'
+import { allSkills } from '@/data/skills'
+import PaymentModal from '@/components/payment/PaymentModal'
+import { format, addDays, setHours, setMinutes, isSameDay, isAfter, isBefore } from 'date-fns'
 
 interface Teacher {
   id: string
@@ -28,19 +30,120 @@ interface Teacher {
   responseTime: string
   teachingExperience: string
   specialties: string[]
+  languages: string[]
+  education: string[]
+  certifications: string[]
+  totalSessions: number
+  totalStudents: number
+  joinedDate: string
+  skills: {
+    skillId: string
+    level: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT'
+    experience: string
+  }[]
   availability: {
     [key: string]: string[]
   }
+  reviews: {
+    id: string
+    studentName: string
+    studentAvatar: string
+    rating: number
+    comment: string
+    date: string
+    skillName: string
+  }[]
 }
 
-interface Skill {
-  id: string
-  name: string
-  category: string
-  icon: string
-  description: string
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced'
+// Mock teacher data
+const mockTeacher: Teacher = {
+  id: '1',
+  name: 'Sarah Chen',
+  avatar: '/avatars/sarah.jpg',
+  bio: 'Passionate software engineer with 8+ years of experience in React, Node.js, and full-stack development. I love teaching and helping students build real-world projects.',
+  rating: 4.9,
+  reviewCount: 47,
+  hourlyRate: 85,
+  verified: true,
+  responseTime: '< 1 hour',
+  teachingExperience: '4+ years',
+  totalSessions: 320,
+  totalStudents: 89,
+  joinedDate: '2022-03-15',
+  specialties: ['React', 'JavaScript', 'TypeScript', 'Node.js', 'Full-Stack Development'],
+  languages: ['English (Native)', 'Mandarin (Fluent)', 'Spanish (Basic)'],
+  education: [
+    'M.S. Computer Science - Stanford University',
+    'B.S. Software Engineering - UC Berkeley'
+  ],
+  certifications: [
+    'AWS Certified Solutions Architect',
+    'Google Cloud Professional Developer',
+    'Meta React Developer Certificate'
+  ],
+  skills: [
+    {
+      skillId: 'react-development',
+      level: 'EXPERT',
+      experience: '6+ years building production React apps at Google and Meta'
+    },
+    {
+      skillId: 'nodejs-development',
+      level: 'ADVANCED',
+      experience: '5+ years backend development with Node.js and Express'
+    },
+    {
+      skillId: 'javascript-fundamentals',
+      level: 'EXPERT',
+      experience: '8+ years of JavaScript development across different environments'
+    }
+  ],
+  availability: {
+    '2025-09-18': ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'],
+    '2025-09-19': ['10:00', '11:00', '13:00', '14:00', '15:00'],
+    '2025-09-20': ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00'],
+    '2025-09-21': ['09:00', '10:00', '14:00', '15:00', '16:00'],
+    '2025-09-22': ['10:00', '11:00', '12:00', '13:00', '14:00']
+  },
+  reviews: [
+    {
+      id: '1',
+      studentName: 'Alex Johnson',
+      studentAvatar: '/avatars/alex.jpg',
+      rating: 5,
+      comment: 'Sarah is an amazing teacher! She explained React concepts clearly and helped me build my first real project. Highly recommended!',
+      date: '2025-09-10',
+      skillName: 'React Development'
+    },
+    {
+      id: '2',
+      studentName: 'Maria Rodriguez',
+      studentAvatar: '/avatars/maria.jpg',
+      rating: 5,
+      comment: 'Excellent teacher with great patience. The Node.js course was exactly what I needed to advance my backend skills.',
+      date: '2025-09-08',
+      skillName: 'Node.js Development'
+    },
+    {
+      id: '3',
+      studentName: 'David Kim',
+      studentAvatar: '/avatars/david.jpg',
+      rating: 4,
+      comment: 'Very knowledgeable and professional. The JavaScript fundamentals course was comprehensive and well-structured.',
+      date: '2025-09-05',
+      skillName: 'JavaScript Fundamentals'
+    }
+  ]
+}
+
+interface BookingSession {
+  skillId: string
+  teacherId: string
+  date: Date
   duration: number
+  sessionType: 'online' | 'in-person'
+  notes: string
+  learningGoals: string
 }
 
 export default function BookPage() {
@@ -48,425 +151,588 @@ export default function BookPage() {
   const router = useRouter()
   const { user } = useAuthStore()
 
-  const teacherId = searchParams.get('teacher')
-  const skillId = searchParams.get('skill')
-
-  const [teacher, setTeacher] = useState<Teacher | null>(null)
-  const [skill, setSkill] = useState<Skill | null>(null)
+  const [teacher] = useState<Teacher>(mockTeacher)
+  const [selectedSkill, setSelectedSkill] = useState<string>('')
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [selectedTime, setSelectedTime] = useState<string>('')
+  const [sessionDuration, setSessionDuration] = useState<number>(60)
   const [sessionType, setSessionType] = useState<'online' | 'in-person'>('online')
-  const [duration, setDuration] = useState(60)
   const [notes, setNotes] = useState('')
-  const [isConfirming, setIsConfirming] = useState(false)
-  const [showSuccess, setShowSuccess] = useState(false)
+  const [learningGoals, setLearningGoals] = useState('')
+  const [currentStep, setCurrentStep] = useState<'details' | 'schedule' | 'payment'>('details')
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [bookingConfirmed, setBookingConfirmed] = useState(false)
 
   useEffect(() => {
-    if (teacherId && skillId) {
-      loadBookingData()
-    }
-  }, [teacherId, skillId])
+    const skillParam = searchParams.get('skill')
+    const teacherParam = searchParams.get('teacher')
 
-  const loadBookingData = async () => {
-    // Mock data - in real app this would come from API
-    const mockTeacher: Teacher = {
-      id: '1',
-      name: 'Sarah Chen',
-      avatar: '/avatars/sarah.jpg',
-      bio: 'Professional chef with 10+ years experience in Italian and Asian cuisine. I specialize in traditional pasta making, authentic pizza techniques, and fusion cooking.',
-      rating: 4.9,
-      reviewCount: 47,
-      hourlyRate: 75,
-      verified: true,
-      responseTime: 'Usually responds within 2 hours',
-      teachingExperience: '5 years teaching experience',
-      specialties: ['Italian Cuisine', 'Pasta Making', 'Pizza Techniques', 'Asian Fusion'],
-      availability: {
-        'Monday': ['09:00', '10:00', '14:00', '15:00', '16:00'],
-        'Tuesday': ['09:00', '10:00', '11:00', '14:00', '15:00'],
-        'Wednesday': ['10:00', '14:00', '15:00', '16:00'],
-        'Thursday': ['09:00', '10:00', '14:00', '15:00', '16:00', '17:00'],
-        'Friday': ['09:00', '10:00', '11:00', '14:00'],
-        'Saturday': ['10:00', '11:00', '14:00', '15:00'],
-        'Sunday': ['14:00', '15:00', '16:00']
-      }
+    if (skillParam) {
+      setSelectedSkill(skillParam)
     }
 
-    const mockSkill: Skill = {
-      id: '1',
-      name: 'Italian Cooking Fundamentals',
-      category: 'Cooking',
-      icon: '🍝',
-      description: 'Learn the basics of authentic Italian cooking, from pasta making to classic sauces.',
-      difficulty: 'Beginner',
-      duration: 120
+    if (teacherParam) {
+      // Load specific teacher data
     }
+  }, [searchParams])
 
-    setTeacher(mockTeacher)
-    setSkill(mockSkill)
-    setDuration(mockSkill.duration)
+  const availableDates = Object.keys(teacher.availability).map(dateStr => new Date(dateStr))
+  const skill = allSkills.find(s => s.id === selectedSkill)
+  const teacherSkill = teacher.skills.find(s => s.skillId === selectedSkill)
+
+  const getAvailableTimesForDate = (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd')
+    return teacher.availability[dateStr] || []
   }
 
-  const getAvailableSlots = (date: Date) => {
-    if (!teacher) return []
-    const dayName = format(date, 'EEEE')
-    return teacher.availability[dayName] || []
+  const calculateTotalCost = () => {
+    const hourlyRate = teacher.hourlyRate
+    const hours = sessionDuration / 60
+    return hourlyRate * hours
   }
 
-  const calculatePrice = () => {
-    if (!teacher) return 0
-    return Math.round((teacher.hourlyRate * duration) / 60)
+  const canProceedToSchedule = () => {
+    return selectedSkill && sessionDuration && sessionType
   }
 
-  const generateNextWeekDates = () => {
-    const dates = []
-    for (let i = 1; i <= 7; i++) {
-      dates.push(addDays(new Date(), i))
+  const canProceedToPayment = () => {
+    return selectedDate && selectedTime && canProceedToSchedule()
+  }
+
+  const handleBookSession = () => {
+    if (!canProceedToPayment()) return
+
+    setShowPaymentModal(true)
+  }
+
+  const handlePaymentSuccess = (paymentId: string) => {
+    setBookingConfirmed(true)
+    setShowPaymentModal(false)
+
+    // Here you would typically save the booking to your backend
+    console.log('Booking confirmed with payment ID:', paymentId)
+  }
+
+  const formatSessionDateTime = () => {
+    if (!selectedDate || !selectedTime) return ''
+
+    const [hours, minutes] = selectedTime.split(':').map(Number)
+    const sessionDateTime = setMinutes(setHours(selectedDate, hours), minutes)
+
+    return {
+      date: format(sessionDateTime, 'EEEE, MMMM d, yyyy'),
+      time: format(sessionDateTime, 'h:mm a'),
+      dateTime: sessionDateTime
     }
-    return dates
   }
 
-  const handleBooking = () => {
-    setIsConfirming(true)
-  }
+  const sessionDateTime = formatSessionDateTime()
 
-  const confirmBooking = async () => {
-    // Mock booking confirmation
-    setTimeout(() => {
-      setIsConfirming(false)
-      setShowSuccess(true)
-    }, 2000)
-  }
-
-  if (!teacher || !skill) {
+  if (bookingConfirmed) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Loading booking details...</p>
-        </div>
+      <div className="max-w-4xl mx-auto p-6">
+        <Card className="text-center">
+          <CardContent className="p-12">
+            <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold mb-2">Session Booked Successfully! 🎉</h1>
+            <p className="text-gray-600 mb-6">
+              Your session with {teacher.name} has been confirmed. You will receive a confirmation email shortly.
+            </p>
+
+            <Card className="max-w-md mx-auto mb-6">
+              <CardContent className="p-4">
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>Skill:</span>
+                    <span className="font-medium">{skill?.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Date:</span>
+                    <span className="font-medium">{sessionDateTime.date}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Time:</span>
+                    <span className="font-medium">{sessionDateTime.time}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Duration:</span>
+                    <span className="font-medium">{sessionDuration} minutes</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Type:</span>
+                    <span className="font-medium capitalize">{sessionType}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex gap-4 justify-center">
+              <Button onClick={() => router.push('/dashboard/calendar')}>
+                View Calendar
+              </Button>
+              <Button variant="outline" onClick={() => router.push('/dashboard/browse')}>
+                Book Another Session
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
+    <div className="max-w-7xl mx-auto p-6 space-y-8">
       {/* Header */}
-      <div className="flex items-start gap-6">
-        <Avatar className="h-20 w-20">
-          <AvatarImage src={teacher.avatar} />
-          <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
-        </Avatar>
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <h1 className="text-3xl font-bold">{teacher.name}</h1>
-            {teacher.verified && (
-              <Badge className="bg-green-100 text-green-800 border-green-200">
-                <Shield className="h-3 w-3 mr-1" />
-                Verified
-              </Badge>
-            )}
-          </div>
-          <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-            <div className="flex items-center gap-1">
-              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              <span className="font-medium">{teacher.rating}</span>
-              <span>({teacher.reviewCount} reviews)</span>
-            </div>
-            <span>•</span>
-            <span>{teacher.teachingExperience}</span>
-            <span>•</span>
-            <span>{teacher.responseTime}</span>
-          </div>
-          <p className="text-gray-700 mb-4">{teacher.bio}</p>
-          <div className="flex items-center gap-2">
-            {teacher.specialties.map((specialty) => (
-              <Badge key={specialty} variant="secondary" className="text-xs">
-                {specialty}
-              </Badge>
-            ))}
-          </div>
-        </div>
-        <div className="text-right">
-          <div className="text-3xl font-bold text-green-600">${teacher.hourlyRate}</div>
-          <div className="text-sm text-gray-600">per hour</div>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold mb-2">Book a Session</h1>
+        <p className="text-gray-600">Schedule a learning session with an expert teacher</p>
       </div>
 
-      {/* Skill Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <span className="text-2xl">{skill.icon}</span>
-            {skill.name}
-          </CardTitle>
-          <CardDescription>{skill.description}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-6 text-sm">
-            <Badge variant="outline">{skill.difficulty}</Badge>
-            <div className="flex items-center gap-1">
-              <Clock className="h-4 w-4" />
-              <span>{skill.duration} minutes recommended</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <BookOpen className="h-4 w-4" />
-              <span>{skill.category}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Progress Steps */}
+      <div className="flex items-center justify-center space-x-8">
+        {[
+          { id: 'details', label: 'Session Details', icon: BookOpen },
+          { id: 'schedule', label: 'Schedule', icon: Calendar },
+          { id: 'payment', label: 'Payment', icon: CreditCard }
+        ].map((step, index) => {
+          const Icon = step.icon
+          const isActive = currentStep === step.id
+          const isCompleted = (step.id === 'details' && canProceedToSchedule()) ||
+                            (step.id === 'schedule' && canProceedToPayment()) ||
+                            (step.id === 'payment' && bookingConfirmed)
 
-      {/* Booking Form */}
-      <div className="grid md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 space-y-6">
-          {/* Date Selection */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Select Date & Time</CardTitle>
-              <CardDescription>Choose when you'd like to have your session</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-7 gap-2">
-                {generateNextWeekDates().map((date) => {
-                  const availableSlots = getAvailableSlots(date)
-                  const isSelected = selectedDate?.toDateString() === date.toDateString()
-
-                  return (
-                    <button
-                      key={date.toISOString()}
-                      onClick={() => {
-                        setSelectedDate(date)
-                        setSelectedTime('')
-                      }}
-                      disabled={availableSlots.length === 0}
-                      className={`p-3 text-center rounded-lg border transition-colors ${
-                        isSelected
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : availableSlots.length > 0
-                          ? 'hover:bg-blue-50 border-gray-200'
-                          : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
-                      }`}
-                    >
-                      <div className="text-xs font-medium">{format(date, 'EEE')}</div>
-                      <div className="text-lg font-bold">{format(date, 'd')}</div>
-                      <div className="text-xs">{format(date, 'MMM')}</div>
-                    </button>
-                  )
-                })}
+          return (
+            <div key={step.id} className="flex items-center">
+              <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                isActive ? 'bg-blue-600 text-white' :
+                isCompleted ? 'bg-green-600 text-white' :
+                'bg-gray-200 text-gray-600'
+              }`}>
+                {isCompleted ? <CheckCircle className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
               </div>
-
-              {selectedDate && (
-                <div>
-                  <Label className="text-sm font-medium">Available times for {format(selectedDate, 'EEEE, MMMM d')}</Label>
-                  <div className="grid grid-cols-4 gap-2 mt-2">
-                    {getAvailableSlots(selectedDate).map((time) => (
-                      <button
-                        key={time}
-                        onClick={() => setSelectedTime(time)}
-                        className={`p-2 text-sm rounded border transition-colors ${
-                          selectedTime === time
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'hover:bg-blue-50 border-gray-200'
-                        }`}
-                      >
-                        {time}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Session Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Session Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label className="text-sm font-medium">Session Type</Label>
-                <RadioGroup value={sessionType} onValueChange={(value: 'online' | 'in-person') => setSessionType(value)} className="mt-2">
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="online" id="online" />
-                    <Label htmlFor="online" className="flex items-center gap-2 cursor-pointer">
-                      <Video className="h-4 w-4" />
-                      Online Session
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="in-person" id="in-person" />
-                    <Label htmlFor="in-person" className="flex items-center gap-2 cursor-pointer">
-                      <MapPin className="h-4 w-4" />
-                      In-Person Session
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <div>
-                <Label htmlFor="duration" className="text-sm font-medium">Duration (minutes)</Label>
-                <Select value={duration.toString()} onValueChange={(value) => setDuration(parseInt(value))}>
-                  <SelectTrigger className="mt-2">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="60">60 minutes</SelectItem>
-                    <SelectItem value="90">90 minutes</SelectItem>
-                    <SelectItem value="120">120 minutes</SelectItem>
-                    <SelectItem value="180">180 minutes</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="notes" className="text-sm font-medium">Special Requests or Notes</Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Let the teacher know about your goals, experience level, or any special requirements..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="mt-2"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Booking Summary */}
-        <div>
-          <Card className="sticky top-6">
-            <CardHeader>
-              <CardTitle>Booking Summary</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm">Teacher:</span>
-                  <span className="text-sm font-medium">{teacher.name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">Skill:</span>
-                  <span className="text-sm font-medium">{skill.name}</span>
-                </div>
-                {selectedDate && (
-                  <div className="flex justify-between">
-                    <span className="text-sm">Date:</span>
-                    <span className="text-sm font-medium">{format(selectedDate, 'MMM d, yyyy')}</span>
-                  </div>
-                )}
-                {selectedTime && (
-                  <div className="flex justify-between">
-                    <span className="text-sm">Time:</span>
-                    <span className="text-sm font-medium">{selectedTime}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-sm">Duration:</span>
-                  <span className="text-sm font-medium">{duration} minutes</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">Type:</span>
-                  <span className="text-sm font-medium">{sessionType === 'online' ? 'Online' : 'In-Person'}</span>
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Total Price:</span>
-                  <span className="text-2xl font-bold text-green-600">${calculatePrice()}</span>
-                </div>
-                <p className="text-xs text-gray-600 mt-1">
-                  Based on ${teacher.hourlyRate}/hour rate
-                </p>
-              </div>
-
-              <Button
-                onClick={handleBooking}
-                disabled={!selectedDate || !selectedTime}
-                className="w-full"
-                size="lg"
-              >
-                <CreditCard className="h-4 w-4 mr-2" />
-                Book Session
-              </Button>
-
-              <Button variant="outline" className="w-full">
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Message Teacher First
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Confirmation Dialog */}
-      <Dialog open={isConfirming} onOpenChange={setIsConfirming}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Your Booking</DialogTitle>
-            <DialogDescription>
-              Please review your session details before confirming
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span>Teacher:</span>
-              <span className="font-medium">{teacher.name}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Skill:</span>
-              <span className="font-medium">{skill.name}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Date & Time:</span>
-              <span className="font-medium">
-                {selectedDate && format(selectedDate, 'MMM d, yyyy')} at {selectedTime}
+              <span className={`ml-2 text-sm font-medium ${
+                isActive ? 'text-blue-600' :
+                isCompleted ? 'text-green-600' :
+                'text-gray-500'
+              }`}>
+                {step.label}
               </span>
+              {index < 2 && (
+                <div className={`w-20 h-0.5 mx-4 ${
+                  isCompleted ? 'bg-green-600' : 'bg-gray-200'
+                }`} />
+              )}
             </div>
-            <div className="flex justify-between">
-              <span>Duration:</span>
-              <span className="font-medium">{duration} minutes</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Total:</span>
-              <span className="font-medium text-green-600">${calculatePrice()}</span>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsConfirming(false)}>
-              Cancel
-            </Button>
-            <Button onClick={confirmBooking}>
-              Confirm & Pay
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          )
+        })}
+      </div>
 
-      {/* Success Dialog */}
-      <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>🎉 Booking Confirmed!</DialogTitle>
-            <DialogDescription>
-              Your session has been successfully booked
-            </DialogDescription>
-          </DialogHeader>
-          <div className="text-center py-4">
-            <p className="mb-4">You'll receive a confirmation email shortly with session details.</p>
-            <p className="text-sm text-gray-600">
-              The teacher will be notified and you can message them directly from your dashboard.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button onClick={() => router.push('/dashboard/calendar')} className="w-full">
-              View in Calendar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <div className="grid lg:grid-cols-3 gap-8">
+        {/* Main Content */}
+        <div className="lg:col-span-2 space-y-6">
+          {currentStep === 'details' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Session Details</CardTitle>
+                <CardDescription>Choose what you want to learn and how</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <Label htmlFor="skill">Select Skill</Label>
+                  <Select value={selectedSkill} onValueChange={setSelectedSkill}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a skill to learn" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {teacher.skills.map((teacherSkill) => {
+                        const skill = allSkills.find(s => s.id === teacherSkill.skillId)
+                        if (!skill) return null
+
+                        return (
+                          <SelectItem key={skill.id} value={skill.id}>
+                            <div className="flex items-center gap-2">
+                              <span>{skill.category.icon}</span>
+                              <span>{skill.name}</span>
+                              <Badge variant="outline" className="ml-2">
+                                {teacherSkill.level}
+                              </Badge>
+                            </div>
+                          </SelectItem>
+                        )
+                      })}
+                    </SelectContent>
+                  </Select>
+                  {selectedSkill && teacherSkill && (
+                    <p className="text-sm text-gray-600 mt-2">
+                      {teacherSkill.experience}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="duration">Session Duration</Label>
+                  <Select value={sessionDuration.toString()} onValueChange={(value) => setSessionDuration(Number(value))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="30">30 minutes - ${(teacher.hourlyRate * 0.5).toFixed(0)}</SelectItem>
+                      <SelectItem value="60">1 hour - ${teacher.hourlyRate}</SelectItem>
+                      <SelectItem value="90">1.5 hours - ${(teacher.hourlyRate * 1.5).toFixed(0)}</SelectItem>
+                      <SelectItem value="120">2 hours - ${teacher.hourlyRate * 2}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Session Type</Label>
+                  <RadioGroup value={sessionType} onValueChange={(value: 'online' | 'in-person') => setSessionType(value)}>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="online" id="online" />
+                      <Label htmlFor="online" className="flex items-center gap-2">
+                        <Video className="h-4 w-4" />
+                        Online Session
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="in-person" id="in-person" />
+                      <Label htmlFor="in-person" className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        In-Person Session
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                <div>
+                  <Label htmlFor="goals">Learning Goals (Optional)</Label>
+                  <Textarea
+                    id="goals"
+                    placeholder="What specific topics or goals would you like to focus on during this session?"
+                    value={learningGoals}
+                    onChange={(e) => setLearningGoals(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="notes">Additional Notes (Optional)</Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="Any additional information for your teacher..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={2}
+                  />
+                </div>
+
+                <Button
+                  onClick={() => setCurrentStep('schedule')}
+                  disabled={!canProceedToSchedule()}
+                  className="w-full"
+                  size="lg"
+                >
+                  Continue to Schedule
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {currentStep === 'schedule' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Choose Date & Time</CardTitle>
+                <CardDescription>Select when you'd like to have your session</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <Label>Available Dates</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
+                    {availableDates.map((date) => {
+                      const isSelected = selectedDate && isSameDay(date, selectedDate)
+                      const availableTimes = getAvailableTimesForDate(date)
+
+                      return (
+                        <Button
+                          key={date.toISOString()}
+                          variant={isSelected ? "default" : "outline"}
+                          onClick={() => {
+                            setSelectedDate(date)
+                            setSelectedTime('')
+                          }}
+                          className="h-auto p-3 flex flex-col items-center"
+                          disabled={availableTimes.length === 0}
+                        >
+                          <div className="font-medium">
+                            {format(date, 'EEE')}
+                          </div>
+                          <div className="text-sm">
+                            {format(date, 'MMM d')}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {availableTimes.length} slots
+                          </div>
+                        </Button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {selectedDate && (
+                  <div>
+                    <Label>Available Times for {format(selectedDate, 'EEEE, MMMM d')}</Label>
+                    <div className="grid grid-cols-3 md:grid-cols-4 gap-3 mt-2">
+                      {getAvailableTimesForDate(selectedDate).map((time) => (
+                        <Button
+                          key={time}
+                          variant={selectedTime === time ? "default" : "outline"}
+                          onClick={() => setSelectedTime(time)}
+                          size="sm"
+                        >
+                          {format(new Date(`2000-01-01T${time}:00`), 'h:mm a')}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentStep('details')}
+                    className="flex-1"
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    onClick={() => setCurrentStep('payment')}
+                    disabled={!canProceedToPayment()}
+                    className="flex-1"
+                  >
+                    Continue to Payment
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {currentStep === 'payment' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Session Summary</CardTitle>
+                <CardDescription>Review your booking details before payment</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-4">
+                  <div className="flex justify-between">
+                    <span>Skill:</span>
+                    <span className="font-medium">{skill?.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Teacher:</span>
+                    <span className="font-medium">{teacher.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Date:</span>
+                    <span className="font-medium">{sessionDateTime.date}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Time:</span>
+                    <span className="font-medium">{sessionDateTime.time}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Duration:</span>
+                    <span className="font-medium">{sessionDuration} minutes</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Type:</span>
+                    <span className="font-medium capitalize">{sessionType}</span>
+                  </div>
+                  <div className="flex justify-between text-lg font-semibold pt-2 border-t">
+                    <span>Total:</span>
+                    <span>${calculateTotalCost().toFixed(2)}</span>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-blue-900">Booking Protection</h4>
+                      <p className="text-sm text-blue-700">
+                        Your booking is protected. If your teacher cancels or doesn't show up, you'll receive a full refund.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentStep('schedule')}
+                    className="flex-1"
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    onClick={handleBookSession}
+                    className="flex-1"
+                    size="lg"
+                  >
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Book & Pay ${calculateTotalCost().toFixed(2)}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Sidebar - Teacher Info */}
+        <div className="space-y-6">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="relative">
+                  <Avatar className="h-16 w-16">
+                    <AvatarImage src={teacher.avatar} />
+                    <AvatarFallback>
+                      {teacher.name.split(' ').map(n => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  {teacher.verified && (
+                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 border-2 border-white rounded-full flex items-center justify-center">
+                      <CheckCircle className="h-3 w-3 text-white" />
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">{teacher.name}</h3>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-1">
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <span className="text-sm font-medium">{teacher.rating}</span>
+                      <span className="text-sm text-gray-600">({teacher.reviewCount})</span>
+                    </div>
+                    {teacher.verified && (
+                      <Badge variant="secondary" className="text-xs">
+                        Verified
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="text-2xl font-bold text-green-600">
+                    ${teacher.hourlyRate}/hour
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-sm text-gray-600 mb-4">{teacher.bio}</p>
+
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-gray-500" />
+                  <span>{teacher.totalStudents} students taught</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Award className="h-4 w-4 text-gray-500" />
+                  <span>{teacher.totalSessions} sessions completed</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-gray-500" />
+                  <span>Responds in {teacher.responseTime}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-gray-500" />
+                  <span>Teaching for {teacher.teachingExperience}</span>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-4 border-t">
+                <h4 className="font-medium mb-2">Specialties</h4>
+                <div className="flex flex-wrap gap-1">
+                  {teacher.specialties.slice(0, 4).map((specialty) => (
+                    <Badge key={specialty} variant="outline" className="text-xs">
+                      {specialty}
+                    </Badge>
+                  ))}
+                  {teacher.specialties.length > 4 && (
+                    <Badge variant="outline" className="text-xs">
+                      +{teacher.specialties.length - 4} more
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              <Button variant="outline" className="w-full mt-4" size="sm">
+                <MessageCircle className="h-3 w-3 mr-2" />
+                Message Teacher
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Recent Reviews */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Recent Reviews</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {teacher.reviews.slice(0, 3).map((review) => (
+                <div key={review.id} className="border-b last:border-0 pb-3 last:pb-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Avatar className="h-6 w-6">
+                      <AvatarImage src={review.studentAvatar} />
+                      <AvatarFallback className="text-xs">
+                        {review.studentName.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">{review.studentName}</span>
+                        <div className="flex">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`h-3 w-3 ${
+                                i < review.rating
+                                  ? 'fill-yellow-400 text-yellow-400'
+                                  : 'text-gray-300'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-600">{review.skillName}</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-600">{review.comment}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Payment Modal */}
+      {showPaymentModal && selectedDate && selectedTime && (
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          session={{
+            id: 'temp-session-id',
+            skillName: skill?.name || '',
+            teacherName: teacher.name,
+            teacherAvatar: teacher.avatar,
+            date: sessionDateTime.dateTime,
+            duration: sessionDuration,
+            hourlyRate: teacher.hourlyRate,
+            totalAmount: calculateTotalCost(),
+            currency: 'USD',
+            type: sessionType,
+            location: sessionType === 'online' ? 'Online (Video Call)' : 'In-Person'
+          }}
+          onPaymentSuccess={handlePaymentSuccess}
+        />
+      )}
     </div>
   )
 }

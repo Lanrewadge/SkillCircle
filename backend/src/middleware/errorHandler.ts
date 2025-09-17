@@ -7,9 +7,9 @@ interface ApiError extends Error {
 
 export const errorHandler = (
   err: ApiError,
-  req: Request,
+  _: Request,
   res: Response,
-  next: NextFunction
+  __: NextFunction
 ) => {
   let statusCode = err.statusCode || 500;
   let message = err.message || 'Internal Server Error';

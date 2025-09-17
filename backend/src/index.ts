@@ -52,7 +52,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api', limiter);
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', (_, res) => {
   res.json({
     status: 'OK',
     timestamp: new Date().toISOString(),

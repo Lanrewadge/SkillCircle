@@ -9,6 +9,9 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
+import { Progress } from '@/components/ui/progress'
 import {
   CreditCard,
   DollarSign,
@@ -20,687 +23,800 @@ import {
   Plus,
   Eye,
   Filter,
-  Calendar
+  Calendar,
+  Wallet,
+  Banknote,
+  ArrowUpRight,
+  ArrowDownRight,
+  MoreHorizontal,
+  Receipt,
+  PieChart,
+  BarChart3,
+  Percent,
+  Building,
+  Shield,
+  Smartphone
 } from 'lucide-react'
-import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns'
+import { format, startOfMonth, endOfMonth, subMonths, addMonths, isWithinInterval, parseISO } from 'date-fns'
 
 interface PaymentMethod {
   id: string
-  type: 'card' | 'bank' | 'paypal'
+  type: 'card' | 'bank' | 'paypal' | 'apple-pay' | 'google-pay'
+  brand?: string
   last4: string
-  brand: string
-  expiryMonth: number
-  expiryYear: number
+  expiryMonth?: number
+  expiryYear?: number
   isDefault: boolean
+  nickname?: string
+  addedDate: string
 }
 
 interface Transaction {
   id: string
   type: 'payment' | 'payout' | 'refund' | 'fee'
+  status: 'completed' | 'pending' | 'failed' | 'cancelled'
   amount: number
   currency: string
-  status: 'completed' | 'pending' | 'failed' | 'cancelled'
   description: string
-  sessionId?: string
-  teacherId?: string
+  date: string
+  paymentMethodId?: string
+  skillName?: string
   teacherName?: string
-  learnerId?: string
-  learnerName?: string
-  date: Date
-  fee?: number
-  netAmount?: number
+  studentName?: string
+  sessionId?: string
+  receiptUrl?: string
+  refundable: boolean
 }
 
-interface PayoutAccount {
-  id: string
-  type: 'bank' | 'paypal'
-  accountName: string
-  accountNumber: string
-  routingNumber?: string
-  email?: string
-  isVerified: boolean
-  isDefault: boolean
+interface EarningsData {
+  totalEarnings: number
+  thisMonth: number
+  lastMonth: number
+  pendingPayouts: number
+  availableBalance: number
+  monthlyEarnings: {
+    month: string
+    amount: number
+  }[]
+  skillBreakdown: {
+    skillName: string
+    amount: number
+    sessions: number
+    percentage: number
+  }[]
+}
+
+const mockPaymentMethods: PaymentMethod[] = [
+  {
+    id: '1',
+    type: 'card',
+    brand: 'Visa',
+    last4: '4242',
+    expiryMonth: 12,
+    expiryYear: 2026,
+    isDefault: true,
+    nickname: 'Primary Card',
+    addedDate: '2024-01-15'
+  },
+  {
+    id: '2',
+    type: 'paypal',
+    last4: 'john@example.com',
+    isDefault: false,
+    addedDate: '2024-02-20'
+  },
+  {
+    id: '3',
+    type: 'bank',
+    last4: '1234',
+    isDefault: false,
+    nickname: 'Savings Account',
+    addedDate: '2024-03-10'
+  }
+]
+
+const mockTransactions: Transaction[] = [
+  {
+    id: 'txn_001',
+    type: 'payment',
+    status: 'completed',
+    amount: -85.00,
+    currency: 'USD',
+    description: 'React Development Session',
+    date: '2025-09-15T10:30:00Z',
+    paymentMethodId: '1',
+    skillName: 'React Development',
+    teacherName: 'Sarah Chen',
+    sessionId: 'sess_001',
+    receiptUrl: '/receipts/txn_001.pdf',
+    refundable: true
+  },
+  {
+    id: 'txn_002',
+    type: 'payout',
+    status: 'completed',
+    amount: 340.00,
+    currency: 'USD',
+    description: 'Weekly earnings payout',
+    date: '2025-09-13T09:00:00Z',
+    refundable: false
+  },
+  {
+    id: 'txn_003',
+    type: 'payment',
+    status: 'completed',
+    amount: -70.00,
+    currency: 'USD',
+    description: 'Python Programming Session',
+    date: '2025-09-12T14:00:00Z',
+    paymentMethodId: '1',
+    skillName: 'Python Programming',
+    teacherName: 'James Wilson',
+    sessionId: 'sess_002',
+    receiptUrl: '/receipts/txn_003.pdf',
+    refundable: true
+  },
+  {
+    id: 'txn_004',
+    type: 'refund',
+    status: 'completed',
+    amount: 60.00,
+    currency: 'USD',
+    description: 'Refund for cancelled Spanish session',
+    date: '2025-09-10T16:30:00Z',
+    skillName: 'Spanish Language',
+    teacherName: 'Maria Gonzalez',
+    refundable: false
+  },
+  {
+    id: 'txn_005',
+    type: 'fee',
+    status: 'completed',
+    amount: -2.50,
+    currency: 'USD',
+    description: 'Platform service fee',
+    date: '2025-09-10T16:30:00Z',
+    refundable: false
+  }
+]
+
+const mockEarnings: EarningsData = {
+  totalEarnings: 2850.00,
+  thisMonth: 680.00,
+  lastMonth: 420.00,
+  pendingPayouts: 125.00,
+  availableBalance: 340.00,
+  monthlyEarnings: [
+    { month: '2025-04', amount: 245.00 },
+    { month: '2025-05', amount: 380.00 },
+    { month: '2025-06', amount: 520.00 },
+    { month: '2025-07', amount: 650.00 },
+    { month: '2025-08', amount: 420.00 },
+    { month: '2025-09', amount: 680.00 }
+  ],
+  skillBreakdown: [
+    { skillName: 'React Development', amount: 1200.00, sessions: 18, percentage: 42 },
+    { skillName: 'Python Programming', amount: 850.00, sessions: 14, percentage: 30 },
+    { skillName: 'JavaScript Fundamentals', amount: 520.00, sessions: 12, percentage: 18 },
+    { skillName: 'Node.js Development', amount: 280.00, sessions: 6, percentage: 10 }
+  ]
 }
 
 export default function PaymentsPage() {
   const { user } = useAuthStore()
   const [activeTab, setActiveTab] = useState('overview')
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
-  const [payoutAccounts, setPayoutAccounts] = useState<PayoutAccount[]>([])
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false)
-  const [isAddPayoutOpen, setIsAddPayoutOpen] = useState(false)
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>(mockPaymentMethods)
+  const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions)
+  const [earnings] = useState<EarningsData>(mockEarnings)
   const [selectedPeriod, setSelectedPeriod] = useState('thisMonth')
+  const [transactionFilter, setTransactionFilter] = useState('all')
+  const [showAddPaymentMethod, setShowAddPaymentMethod] = useState(false)
 
-  const [newPaymentMethod, setNewPaymentMethod] = useState({
-    cardNumber: '',
-    expiryMonth: '',
-    expiryYear: '',
-    cvc: '',
-    name: '',
-    isDefault: false
+  const filteredTransactions = transactions.filter(transaction => {
+    if (transactionFilter === 'all') return true
+    return transaction.type === transactionFilter
   })
 
-  const [newPayoutAccount, setNewPayoutAccount] = useState({
-    type: 'bank' as const,
-    accountName: '',
-    accountNumber: '',
-    routingNumber: '',
-    email: '',
-    isDefault: false
-  })
-
-  useEffect(() => {
-    loadPaymentData()
-  }, [])
-
-  const loadPaymentData = () => {
-    // Mock payment methods
-    const mockPaymentMethods: PaymentMethod[] = [
-      {
-        id: '1',
-        type: 'card',
-        last4: '4242',
-        brand: 'Visa',
-        expiryMonth: 12,
-        expiryYear: 2026,
-        isDefault: true
-      },
-      {
-        id: '2',
-        type: 'card',
-        last4: '0005',
-        brand: 'Mastercard',
-        expiryMonth: 8,
-        expiryYear: 2025,
-        isDefault: false
-      }
-    ]
-
-    // Mock payout accounts
-    const mockPayoutAccounts: PayoutAccount[] = [
-      {
-        id: '1',
-        type: 'bank',
-        accountName: 'John Doe',
-        accountNumber: '****1234',
-        routingNumber: '021000021',
-        isVerified: true,
-        isDefault: true
-      },
-      {
-        id: '2',
-        type: 'paypal',
-        accountName: 'PayPal Account',
-        accountNumber: 'john@example.com',
-        email: 'john@example.com',
-        isVerified: true,
-        isDefault: false
-      }
-    ]
-
-    // Mock transactions
-    const mockTransactions: Transaction[] = [
-      {
-        id: '1',
-        type: 'payment',
-        amount: 85,
-        currency: 'USD',
-        status: 'completed',
-        description: 'React Development session',
-        sessionId: 'sess_1',
-        teacherId: '2',
-        teacherName: 'Alex Rodriguez',
-        date: new Date('2025-09-15T14:00:00'),
-        fee: 4.25,
-        netAmount: 80.75
-      },
-      {
-        id: '2',
-        type: 'payout',
-        amount: 450.50,
-        currency: 'USD',
-        status: 'completed',
-        description: 'Weekly payout',
-        date: new Date('2025-09-10T09:00:00'),
-        fee: 22.53,
-        netAmount: 427.97
-      },
-      {
-        id: '3',
-        type: 'payment',
-        amount: 75,
-        currency: 'USD',
-        status: 'pending',
-        description: 'Italian Cooking session',
-        sessionId: 'sess_2',
-        teacherId: '1',
-        teacherName: 'Sarah Chen',
-        date: new Date('2025-09-18T16:00:00'),
-        fee: 3.75,
-        netAmount: 71.25
-      },
-      {
-        id: '4',
-        type: 'refund',
-        amount: -60,
-        currency: 'USD',
-        status: 'completed',
-        description: 'Guitar lesson refund',
-        sessionId: 'sess_3',
-        date: new Date('2025-09-12T10:00:00')
-      }
-    ]
-
-    setPaymentMethods(mockPaymentMethods)
-    setPayoutAccounts(mockPayoutAccounts)
-    setTransactions(mockTransactions)
-  }
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="h-4 w-4 text-green-600" />
-      case 'pending':
-        return <Clock className="h-4 w-4 text-yellow-600" />
-      case 'failed':
-      case 'cancelled':
-        return <AlertCircle className="h-4 w-4 text-red-600" />
-      default:
-        return <Clock className="h-4 w-4 text-gray-600" />
-    }
-  }
-
-  const getTransactionTypeColor = (type: string) => {
+  const getTransactionIcon = (type: string, status: string) => {
     switch (type) {
       case 'payment':
-        return 'text-green-600'
+        return <ArrowDownRight className="h-4 w-4 text-red-500" />
       case 'payout':
-        return 'text-blue-600'
+        return <ArrowUpRight className="h-4 w-4 text-green-500" />
       case 'refund':
-        return 'text-red-600'
+        return <ArrowUpRight className="h-4 w-4 text-blue-500" />
       case 'fee':
-        return 'text-gray-600'
+        return <ArrowDownRight className="h-4 w-4 text-orange-500" />
       default:
-        return 'text-gray-600'
+        return <DollarSign className="h-4 w-4 text-gray-500" />
     }
   }
 
-  const calculateTotalEarnings = () => {
-    return transactions
-      .filter(t => t.type === 'payment' && t.status === 'completed')
-      .reduce((sum, t) => sum + (t.netAmount || t.amount), 0)
+  const getPaymentMethodIcon = (type: string, brand?: string) => {
+    switch (type) {
+      case 'card':
+        return <CreditCard className="h-5 w-5" />
+      case 'paypal':
+        return <Wallet className="h-5 w-5" />
+      case 'bank':
+        return <Building className="h-5 w-5" />
+      case 'apple-pay':
+        return <Smartphone className="h-5 w-5" />
+      case 'google-pay':
+        return <Smartphone className="h-5 w-5" />
+      default:
+        return <CreditCard className="h-5 w-5" />
+    }
   }
 
-  const calculatePendingPayments = () => {
-    return transactions
-      .filter(t => t.type === 'payment' && t.status === 'pending')
-      .reduce((sum, t) => sum + t.amount, 0)
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(Math.abs(amount))
   }
 
-  const formatCardNumber = (number: string) => {
-    return number.replace(/\s/g, '').replace(/(.{4})/g, '$1 ').trim()
+  const getEarningsGrowth = () => {
+    if (earnings.lastMonth === 0) return 100
+    return ((earnings.thisMonth - earnings.lastMonth) / earnings.lastMonth) * 100
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6">
+    <div className="max-w-7xl mx-auto p-6 space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Payments & Billing</h1>
-        <p className="text-muted-foreground mt-2">
+        <h1 className="text-3xl font-bold mb-2">Payments & Earnings</h1>
+        <p className="text-gray-600">
           Manage your payment methods, view transactions, and track earnings
         </p>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-600" />
-              <div>
-                <p className="text-sm text-muted-foreground">Total Earnings</p>
-                <p className="text-2xl font-bold">${calculateTotalEarnings().toFixed(2)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-yellow-600" />
-              <div>
-                <p className="text-sm text-muted-foreground">Pending</p>
-                <p className="text-2xl font-bold">${calculatePendingPayments().toFixed(2)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-blue-600" />
-              <div>
-                <p className="text-sm text-muted-foreground">This Month</p>
-                <p className="text-2xl font-bold">$1,247.50</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-purple-600" />
-              <div>
-                <p className="text-sm text-muted-foreground">Sessions</p>
-                <p className="text-2xl font-bold">23</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="methods">Payment Methods</TabsTrigger>
-          <TabsTrigger value="payouts">Payout Accounts</TabsTrigger>
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
+          <TabsTrigger value="earnings">Earnings</TabsTrigger>
+          <TabsTrigger value="methods">Payment Methods</TabsTrigger>
         </TabsList>
 
-        {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Recent Transactions */}
+          {/* Financial Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card>
-              <CardHeader>
-                <CardTitle>Recent Transactions</CardTitle>
-                <CardDescription>Your latest payment activity</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {transactions.slice(0, 5).map((transaction) => (
-                    <div key={transaction.id} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        {getStatusIcon(transaction.status)}
-                        <div>
-                          <p className="font-medium">{transaction.description}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {format(transaction.date, 'MMM d, yyyy')}
-                          </p>
-                        </div>
-                      </div>
-                      <div className={`font-medium ${getTransactionTypeColor(transaction.type)}`}>
-                        {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
-                      </div>
-                    </div>
-                  ))}
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Available Balance</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {formatCurrency(earnings.availableBalance)}
+                    </p>
+                  </div>
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <Wallet className="h-6 w-6 text-green-600" />
+                  </div>
                 </div>
-                <Button variant="outline" className="w-full mt-4">
-                  View All Transactions
-                </Button>
+                <div className="mt-2">
+                  <Button size="sm" className="w-full">
+                    <Download className="h-3 w-3 mr-2" />
+                    Withdraw
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Payment Methods */}
             <Card>
-              <CardHeader>
-                <CardTitle>Payment Methods</CardTitle>
-                <CardDescription>Manage how you pay for sessions</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {paymentMethods.map((method) => (
-                    <div key={method.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <CreditCard className="h-5 w-5 text-gray-600" />
-                        <div>
-                          <p className="font-medium">{method.brand} •••• {method.last4}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Expires {method.expiryMonth}/{method.expiryYear}
-                          </p>
-                        </div>
-                      </div>
-                      {method.isDefault && (
-                        <Badge variant="secondary">Default</Badge>
-                      )}
-                    </div>
-                  ))}
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">This Month Earnings</p>
+                    <p className="text-2xl font-bold">
+                      {formatCurrency(earnings.thisMonth)}
+                    </p>
+                  </div>
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <TrendingUp className="h-6 w-6 text-blue-600" />
+                  </div>
                 </div>
-                <Button variant="outline" className="w-full mt-4">
-                  Manage Payment Methods
-                </Button>
+                <div className="flex items-center mt-2 text-sm">
+                  <span className={`flex items-center ${getEarningsGrowth() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                    {getEarningsGrowth() >= 0 ? '+' : ''}{getEarningsGrowth().toFixed(1)}%
+                  </span>
+                  <span className="text-gray-600 ml-2">vs last month</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Pending Payouts</p>
+                    <p className="text-2xl font-bold text-orange-600">
+                      {formatCurrency(earnings.pendingPayouts)}
+                    </p>
+                  </div>
+                  <div className="p-2 bg-orange-100 rounded-lg">
+                    <Clock className="h-6 w-6 text-orange-600" />
+                  </div>
+                </div>
+                <p className="text-xs text-gray-600 mt-2">
+                  Next payout in 3 days
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Earnings</p>
+                    <p className="text-2xl font-bold">
+                      {formatCurrency(earnings.totalEarnings)}
+                    </p>
+                  </div>
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <DollarSign className="h-6 w-6 text-purple-600" />
+                  </div>
+                </div>
+                <p className="text-xs text-gray-600 mt-2">
+                  Lifetime earnings
+                </p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Quick Actions */}
+          {/* Charts Row */}
+          <div className="grid lg:grid-cols-2 gap-6">
+            {/* Monthly Earnings Chart */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Monthly Earnings
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {earnings.monthlyEarnings.slice(-6).map((data, index) => {
+                    const maxAmount = Math.max(...earnings.monthlyEarnings.map(e => e.amount))
+                    const percentage = (data.amount / maxAmount) * 100
+
+                    return (
+                      <div key={data.month} className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span>{format(parseISO(data.month + '-01'), 'MMM yyyy')}</span>
+                          <span className="font-medium">{formatCurrency(data.amount)}</span>
+                        </div>
+                        <Progress value={percentage} className="h-2" />
+                      </div>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Skills Breakdown */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <PieChart className="h-5 w-5" />
+                  Earnings by Skill
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {earnings.skillBreakdown.map((skill) => (
+                    <div key={skill.skillName} className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">{skill.skillName}</span>
+                        <div className="text-right">
+                          <div className="font-medium">{formatCurrency(skill.amount)}</div>
+                          <div className="text-xs text-gray-600">{skill.sessions} sessions</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Progress value={skill.percentage} className="h-2 flex-1" />
+                        <span className="text-xs text-gray-600 w-10">{skill.percentage}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Recent Transactions */}
           <Card>
             <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Recent Transactions</CardTitle>
+                <Button variant="outline" size="sm" onClick={() => setActiveTab('transactions')}>
+                  View All
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Button variant="outline" className="h-20 flex-col">
-                  <Download className="h-5 w-5 mb-2" />
-                  Download Statement
-                </Button>
-                <Button variant="outline" className="h-20 flex-col">
-                  <Plus className="h-5 w-5 mb-2" />
-                  Add Payment Method
-                </Button>
-                <Button variant="outline" className="h-20 flex-col">
-                  <CreditCard className="h-5 w-5 mb-2" />
-                  Request Payout
-                </Button>
-                <Button variant="outline" className="h-20 flex-col">
-                  <Filter className="h-5 w-5 mb-2" />
-                  Filter Transactions
-                </Button>
+              <div className="space-y-4">
+                {transactions.slice(0, 5).map((transaction) => (
+                  <div key={transaction.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      {getTransactionIcon(transaction.type, transaction.status)}
+                      <div>
+                        <h4 className="font-medium text-sm">{transaction.description}</h4>
+                        <p className="text-xs text-gray-600">
+                          {format(parseISO(transaction.date), 'MMM d, yyyy • h:mm a')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className={`font-medium ${transaction.amount >= 0 ? 'text-green-600' : 'text-gray-900'}`}>
+                        {transaction.amount >= 0 ? '+' : ''}{formatCurrency(transaction.amount)}
+                      </div>
+                      <Badge
+                        variant={transaction.status === 'completed' ? 'default' : 'secondary'}
+                        className="text-xs"
+                      >
+                        {transaction.status}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Payment Methods Tab */}
-        <TabsContent value="methods" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Payment Methods</h2>
-            <Dialog open={isAddPaymentOpen} onOpenChange={setIsAddPaymentOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Payment Method
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add Payment Method</DialogTitle>
-                  <DialogDescription>
-                    Add a new credit or debit card for payments
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div>
-                    <Label htmlFor="cardNumber">Card Number</Label>
-                    <Input
-                      id="cardNumber"
-                      placeholder="1234 5678 9012 3456"
-                      value={formatCardNumber(newPaymentMethod.cardNumber)}
-                      onChange={(e) => setNewPaymentMethod({
-                        ...newPaymentMethod,
-                        cardNumber: e.target.value.replace(/\s/g, '')
-                      })}
-                      maxLength={19}
-                    />
-                  </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="expiryMonth">Month</Label>
-                      <Input
-                        id="expiryMonth"
-                        placeholder="MM"
-                        value={newPaymentMethod.expiryMonth}
-                        onChange={(e) => setNewPaymentMethod({...newPaymentMethod, expiryMonth: e.target.value})}
-                        maxLength={2}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="expiryYear">Year</Label>
-                      <Input
-                        id="expiryYear"
-                        placeholder="YYYY"
-                        value={newPaymentMethod.expiryYear}
-                        onChange={(e) => setNewPaymentMethod({...newPaymentMethod, expiryYear: e.target.value})}
-                        maxLength={4}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="cvc">CVC</Label>
-                      <Input
-                        id="cvc"
-                        placeholder="123"
-                        value={newPaymentMethod.cvc}
-                        onChange={(e) => setNewPaymentMethod({...newPaymentMethod, cvc: e.target.value})}
-                        maxLength={4}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="cardName">Cardholder Name</Label>
-                    <Input
-                      id="cardName"
-                      placeholder="John Doe"
-                      value={newPaymentMethod.name}
-                      onChange={(e) => setNewPaymentMethod({...newPaymentMethod, name: e.target.value})}
-                    />
-                  </div>
+        <TabsContent value="transactions" className="space-y-6">
+          {/* Transaction Filters */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
+                  <Label>Filter by type:</Label>
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsAddPaymentOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={() => setIsAddPaymentOpen(false)}>
-                    Add Card
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          <div className="grid gap-4">
-            {paymentMethods.map((method) => (
-              <Card key={method.id}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded flex items-center justify-center">
-                        <CreditCard className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-medium">{method.brand} •••• {method.last4}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Expires {method.expiryMonth.toString().padStart(2, '0')}/{method.expiryYear}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {method.isDefault && (
-                        <Badge variant="secondary">Default</Badge>
-                      )}
-                      <Button variant="outline" size="sm">
-                        <Eye className="h-3 w-3" />
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        Edit
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* Payout Accounts Tab */}
-        <TabsContent value="payouts" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Payout Accounts</h2>
-            <Dialog open={isAddPayoutOpen} onOpenChange={setIsAddPayoutOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Payout Account
+                <Select value={transactionFilter} onValueChange={setTransactionFilter}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Transactions</SelectItem>
+                    <SelectItem value="payment">Payments</SelectItem>
+                    <SelectItem value="payout">Payouts</SelectItem>
+                    <SelectItem value="refund">Refunds</SelectItem>
+                    <SelectItem value="fee">Fees</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" size="sm">
+                  <Download className="h-3 w-3 mr-2" />
+                  Export
                 </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add Payout Account</DialogTitle>
-                  <DialogDescription>
-                    Add a bank account or PayPal for receiving payments
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div>
-                    <Label>Account Type</Label>
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                      <Button
-                        type="button"
-                        variant={newPayoutAccount.type === 'bank' ? 'default' : 'outline'}
-                        onClick={() => setNewPayoutAccount({...newPayoutAccount, type: 'bank'})}
-                      >
-                        Bank Account
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={newPayoutAccount.type === 'paypal' ? 'default' : 'outline'}
-                        onClick={() => setNewPayoutAccount({...newPayoutAccount, type: 'paypal'})}
-                      >
-                        PayPal
-                      </Button>
-                    </div>
-                  </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                  {newPayoutAccount.type === 'bank' ? (
-                    <>
-                      <div>
-                        <Label htmlFor="accountName">Account Holder Name</Label>
-                        <Input
-                          id="accountName"
-                          value={newPayoutAccount.accountName}
-                          onChange={(e) => setNewPayoutAccount({...newPayoutAccount, accountName: e.target.value})}
-                        />
+          {/* Transactions List */}
+          <Card>
+            <CardContent className="p-0">
+              <div className="space-y-0">
+                {filteredTransactions.map((transaction, index) => (
+                  <div key={transaction.id} className={`p-4 ${index !== filteredTransactions.length - 1 ? 'border-b' : ''}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        {getTransactionIcon(transaction.type, transaction.status)}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium">{transaction.description}</h4>
+                            <Badge
+                              variant={transaction.status === 'completed' ? 'default' : 'secondary'}
+                              className="text-xs"
+                            >
+                              {transaction.status}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <span>{format(parseISO(transaction.date), 'MMM d, yyyy • h:mm a')}</span>
+                            {transaction.skillName && (
+                              <span>• {transaction.skillName}</span>
+                            )}
+                            {transaction.teacherName && (
+                              <span>• with {transaction.teacherName}</span>
+                            )}
+                            {transaction.studentName && (
+                              <span>• from {transaction.studentName}</span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <Label htmlFor="routingNumber">Routing Number</Label>
-                        <Input
-                          id="routingNumber"
-                          value={newPayoutAccount.routingNumber}
-                          onChange={(e) => setNewPayoutAccount({...newPayoutAccount, routingNumber: e.target.value})}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="accountNumber">Account Number</Label>
-                        <Input
-                          id="accountNumber"
-                          value={newPayoutAccount.accountNumber}
-                          onChange={(e) => setNewPayoutAccount({...newPayoutAccount, accountNumber: e.target.value})}
-                        />
-                      </div>
-                    </>
-                  ) : (
-                    <div>
-                      <Label htmlFor="paypalEmail">PayPal Email</Label>
-                      <Input
-                        id="paypalEmail"
-                        type="email"
-                        value={newPayoutAccount.email}
-                        onChange={(e) => setNewPayoutAccount({...newPayoutAccount, email: e.target.value})}
-                      />
-                    </div>
-                  )}
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsAddPayoutOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={() => setIsAddPayoutOpen(false)}>
-                    Add Account
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          <div className="grid gap-4">
-            {payoutAccounts.map((account) => (
-              <Card key={account.id}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-8 bg-gradient-to-r from-green-600 to-blue-600 rounded flex items-center justify-center">
-                        <DollarSign className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-medium">{account.accountName}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {account.type === 'bank' ? `•••• ${account.accountNumber}` : account.email}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {account.isVerified && (
-                        <Badge className="bg-green-100 text-green-800">Verified</Badge>
-                      )}
-                      {account.isDefault && (
-                        <Badge variant="secondary">Default</Badge>
-                      )}
-                      <Button variant="outline" size="sm">
-                        Edit
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* Transactions Tab */}
-        <TabsContent value="transactions" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Transaction History</h2>
-            <div className="flex gap-2">
-              <Button variant="outline">
-                <Filter className="h-4 w-4 mr-2" />
-                Filter
-              </Button>
-              <Button variant="outline">
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            {transactions.map((transaction) => (
-              <Card key={transaction.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      {getStatusIcon(transaction.status)}
-                      <div>
-                        <p className="font-medium">{transaction.description}</p>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span>{format(transaction.date, 'MMM d, yyyy HH:mm')}</span>
-                          {transaction.teacherName && (
-                            <>
-                              <span>•</span>
-                              <span>with {transaction.teacherName}</span>
-                            </>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <div className={`font-medium text-lg ${transaction.amount >= 0 ? 'text-green-600' : 'text-gray-900'}`}>
+                            {transaction.amount >= 0 ? '+' : ''}{formatCurrency(transaction.amount)}
+                          </div>
+                          <div className="text-xs text-gray-600">{transaction.currency}</div>
+                        </div>
+                        <div className="flex gap-1">
+                          {transaction.receiptUrl && (
+                            <Button variant="ghost" size="sm">
+                              <Receipt className="h-3 w-3" />
+                            </Button>
                           )}
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-3 w-3" />
+                          </Button>
                         </div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <div className={`font-medium ${getTransactionTypeColor(transaction.type)}`}>
-                        {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
-                      </div>
-                      {transaction.fee && (
-                        <div className="text-xs text-muted-foreground">
-                          Fee: ${transaction.fee.toFixed(2)}
-                        </div>
-                      )}
-                      <Badge variant="outline" className="text-xs mt-1">
-                        {transaction.status}
-                      </Badge>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="earnings" className="space-y-6">
+          {/* Earnings Summary */}
+          <div className="grid md:grid-cols-3 gap-6">
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle>Earnings Analytics</CardTitle>
+                <CardDescription>Track your teaching income over time</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">
+                        {formatCurrency(earnings.thisMonth)}
+                      </div>
+                      <div className="text-sm text-gray-600">This Month</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold">
+                        {formatCurrency(earnings.thisMonth / 30 * 7)}
+                      </div>
+                      <div className="text-sm text-gray-600">This Week</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold">
+                        {formatCurrency(earnings.thisMonth / 30)}
+                      </div>
+                      <div className="text-sm text-gray-600">Daily Average</div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <h4 className="font-medium mb-4">Monthly Earnings Trend</h4>
+                    <div className="space-y-3">
+                      {earnings.monthlyEarnings.slice(-6).map((data) => {
+                        const maxAmount = Math.max(...earnings.monthlyEarnings.map(e => e.amount))
+                        const percentage = (data.amount / maxAmount) * 100
+
+                        return (
+                          <div key={data.month} className="space-y-2">
+                            <div className="flex items-center justify-between text-sm">
+                              <span>{format(parseISO(data.month + '-01'), 'MMMM yyyy')}</span>
+                              <span className="font-medium">{formatCurrency(data.amount)}</span>
+                            </div>
+                            <Progress value={percentage} className="h-3" />
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Payout Schedule</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <Clock className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+                  <div className="font-medium">Next Payout</div>
+                  <div className="text-2xl font-bold text-blue-600 mb-1">
+                    {formatCurrency(earnings.pendingPayouts)}
+                  </div>
+                  <div className="text-sm text-gray-600">September 20, 2025</div>
+                </div>
+
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span>Payout frequency:</span>
+                    <span className="font-medium">Weekly</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Next payout day:</span>
+                    <span className="font-medium">Friday</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Processing time:</span>
+                    <span className="font-medium">1-2 business days</span>
+                  </div>
+                </div>
+
+                <Button className="w-full" variant="outline">
+                  Update Payout Settings
+                </Button>
+              </CardContent>
+            </Card>
           </div>
+
+          {/* Skills Performance */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Skill Performance</CardTitle>
+              <CardDescription>See which skills are generating the most income</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {earnings.skillBreakdown.map((skill) => (
+                  <div key={skill.skillName} className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">{skill.skillName}</h4>
+                        <p className="text-sm text-gray-600">{skill.sessions} sessions completed</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-lg">{formatCurrency(skill.amount)}</div>
+                        <div className="text-sm text-gray-600">{skill.percentage}% of total</div>
+                      </div>
+                    </div>
+                    <Progress value={skill.percentage} className="h-3" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="methods" className="space-y-6">
+          {/* Payment Methods */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Payment Methods</CardTitle>
+                  <CardDescription>Manage your payment and payout methods</CardDescription>
+                </div>
+                <Dialog open={showAddPaymentMethod} onOpenChange={setShowAddPaymentMethod}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Method
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add Payment Method</DialogTitle>
+                      <DialogDescription>
+                        Add a new payment method for bookings and payouts
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <Button variant="outline" className="h-20 flex flex-col gap-2">
+                          <CreditCard className="h-6 w-6" />
+                          <span>Credit Card</span>
+                        </Button>
+                        <Button variant="outline" className="h-20 flex flex-col gap-2">
+                          <Building className="h-6 w-6" />
+                          <span>Bank Account</span>
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <Button variant="outline" className="h-20 flex flex-col gap-2">
+                          <Wallet className="h-6 w-6" />
+                          <span>PayPal</span>
+                        </Button>
+                        <Button variant="outline" className="h-20 flex flex-col gap-2">
+                          <Smartphone className="h-6 w-6" />
+                          <span>Digital Wallet</span>
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {paymentMethods.map((method) => (
+                  <Card key={method.id} className={`${method.isDefault ? 'ring-2 ring-blue-500' : ''}`}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="p-2 bg-gray-100 rounded-lg">
+                            {getPaymentMethodIcon(method.type, method.brand)}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-medium">
+                                {method.type === 'card' && method.brand && `${method.brand} ****${method.last4}`}
+                                {method.type === 'paypal' && `PayPal (${method.last4})`}
+                                {method.type === 'bank' && `Bank ****${method.last4}`}
+                              </h4>
+                              {method.isDefault && (
+                                <Badge variant="default" className="text-xs">Default</Badge>
+                              )}
+                            </div>
+                            {method.nickname && (
+                              <p className="text-sm text-gray-600">{method.nickname}</p>
+                            )}
+                            {method.expiryMonth && method.expiryYear && (
+                              <p className="text-sm text-gray-600">
+                                Expires {method.expiryMonth.toString().padStart(2, '0')}/{method.expiryYear}
+                              </p>
+                            )}
+                            <p className="text-xs text-gray-500">
+                              Added {format(parseISO(method.addedDate), 'MMM d, yyyy')}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {!method.isDefault && (
+                            <Button variant="outline" size="sm">
+                              Set Default
+                            </Button>
+                          )}
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Security & Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Security & Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium">Two-factor authentication</h4>
+                  <p className="text-sm text-gray-600">Add an extra layer of security to your account</p>
+                </div>
+                <Button variant="outline" size="sm">
+                  Enable
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium">Email notifications</h4>
+                  <p className="text-sm text-gray-600">Get notified about payments and earnings</p>
+                </div>
+                <Button variant="outline" size="sm">
+                  Manage
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium">Tax documents</h4>
+                  <p className="text-sm text-gray-600">Download your tax forms and reports</p>
+                </div>
+                <Button variant="outline" size="sm">
+                  <Download className="h-3 w-3 mr-2" />
+                  Download
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

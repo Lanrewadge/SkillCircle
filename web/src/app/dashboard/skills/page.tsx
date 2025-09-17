@@ -61,21 +61,20 @@ export default function SkillsPage() {
     }
   })
 
-  // Mock data
+  // Import skills data
+  const { allSkills, skillCategories } = await import('@/data/skills')
+
+  // Mock user skills data using real skill definitions
   const mockUserSkills = [
     {
       id: 1,
       role: 'TEACHER',
       level: 'EXPERT',
-      experience: '5+ years of professional React development',
-      hourlyRate: 75,
+      experience: '5+ years of professional React development, built 20+ production apps',
+      hourlyRate: 85,
       currency: 'USD',
       isActive: true,
-      skill: {
-        id: 1,
-        name: 'React Development',
-        category: { name: 'Technology', icon: '💻' }
-      },
+      skill: allSkills.find(s => s.id === 'react-development'),
       students: 24,
       rating: 4.8,
       totalSessions: 89,
@@ -85,28 +84,35 @@ export default function SkillsPage() {
       id: 2,
       role: 'TEACHER',
       level: 'ADVANCED',
-      experience: '4+ years of Python for web and data science',
-      hourlyRate: 65,
+      experience: '4+ years of Python for web development and data science projects',
+      hourlyRate: 70,
       currency: 'USD',
       isActive: true,
-      skill: {
-        id: 2,
-        name: 'Python Programming',
-        category: { name: 'Technology', icon: '💻' }
-      },
+      skill: allSkills.find(s => s.id === 'python-programming'),
       students: 18,
       rating: 4.7,
       totalSessions: 52,
       totalEarnings: 3380
+    },
+    {
+      id: 3,
+      role: 'TEACHER',
+      level: 'INTERMEDIATE',
+      experience: 'Passionate Italian chef with 3+ years teaching authentic recipes',
+      hourlyRate: 45,
+      currency: 'USD',
+      isActive: true,
+      skill: allSkills.find(s => s.id === 'italian-cooking'),
+      students: 12,
+      rating: 4.9,
+      totalSessions: 35,
+      totalEarnings: 1575
     }
   ]
 
-  const mockAvailableSkills = [
-    { id: 3, name: 'JavaScript Fundamentals', category: { name: 'Technology' } },
-    { id: 4, name: 'Node.js Development', category: { name: 'Technology' } },
-    { id: 5, name: 'Italian Cooking', category: { name: 'Cooking' } },
-    { id: 6, name: 'Guitar Lessons', category: { name: 'Music' } }
-  ]
+  const mockAvailableSkills = allSkills.filter(skill =>
+    !mockUserSkills.some(userSkill => userSkill.skill?.id === skill.id)
+  )
 
   const mockLearningSkills = [
     {
@@ -169,8 +175,8 @@ export default function SkillsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {mockAvailableSkills.map((skill) => (
-                      <SelectItem key={skill.id} value={skill.id.toString()}>
-                        {skill.name} - {skill.category.name}
+                      <SelectItem key={skill.id} value={skill.id}>
+                        {skill.category.icon} {skill.name} - {skill.category.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -265,13 +271,17 @@ export default function SkillsPage() {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-4">
-                      <div className="text-4xl">{userSkill.skill.category.icon}</div>
+                      <div className="text-4xl">{userSkill.skill?.category.icon}</div>
                       <div>
-                        <CardTitle className="text-xl">{userSkill.skill.name}</CardTitle>
+                        <CardTitle className="text-xl">{userSkill.skill?.name}</CardTitle>
+                        <p className="text-sm text-gray-600 mb-2">{userSkill.skill?.description}</p>
                         <div className="flex items-center space-x-2 mt-2">
                           <Badge variant="outline">{userSkill.level}</Badge>
                           <Badge variant={userSkill.isActive ? "default" : "secondary"}>
                             {userSkill.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
+                          <Badge variant="secondary" className="text-xs">
+                            ${userSkill.skill?.averageHourlyRate.min}-${userSkill.skill?.averageHourlyRate.max}/hr market rate
                           </Badge>
                         </div>
                       </div>

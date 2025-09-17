@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -25,7 +25,12 @@ const registerSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  confirmPassword: z.string()
+  confirmPassword: z.string(),
+  userType: z.enum(['learner', 'tutor', 'both'], {
+    required_error: 'Please select your user type'
+  }),
+  city: z.string().min(1, 'City is required'),
+  country: z.string().min(1, 'Country is required')
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"]
@@ -36,9 +41,18 @@ type RegisterFormData = z.infer<typeof registerSchema>
 
 export default function AuthPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { login, register, isLoading } = useAuthStore()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [activeTab, setActiveTab] = useState('login')
+
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab === 'register') {
+      setActiveTab('register')
+    }
+  }, [searchParams])
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema)
@@ -51,15 +65,43 @@ export default function AuthPage() {
   const onLogin = async (data: LoginFormData) => {
     const success = await login(data.email, data.password)
     if (success) {
-      router.push('/dashboard')
+      // Get user from auth store to determine redirect
+      const user = useAuthStore.getState().user
+      if (user) {
+        if (user.isTeacher && !user.isLearner) {
+          router.push('/dashboard/calendar') // Tutors see their calendar first
+        } else if (user.isLearner && !user.isTeacher) {
+          router.push('/dashboard/browse') // Learners see browse page first
+        } else {
+          router.push('/dashboard') // Both roles see general dashboard
+        }
+      } else {
+        router.push('/dashboard')
+      }
     }
   }
 
   const onRegister = async (data: RegisterFormData) => {
-    const { confirmPassword, ...registerData } = data
+    const { confirmPassword, userType, firstName, lastName, username, ...baseData } = data
+
+    const registerData = {
+      ...baseData,
+      name: `${firstName} ${lastName}`,
+      address: `${data.city}, ${data.country}`,
+      isTeacher: userType === 'tutor' || userType === 'both',
+      isLearner: userType === 'learner' || userType === 'both'
+    }
+
     const success = await register(registerData)
     if (success) {
-      router.push('/dashboard')
+      // Redirect based on user type
+      if (userType === 'learner') {
+        router.push('/dashboard?tab=browse')
+      } else if (userType === 'tutor') {
+        router.push('/dashboard/skills')
+      } else {
+        router.push('/dashboard/onboarding')
+      }
     }
   }
 
@@ -74,7 +116,7 @@ export default function AuthPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="login" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">Login</TabsTrigger>
             <TabsTrigger value="register">Sign Up</TabsTrigger>
@@ -202,6 +244,54 @@ export default function AuthPage() {
                     {registerForm.formState.errors.email.message}
                   </p>
                 )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="userType">I want to...</Label>
+                <select
+                  id="userType"
+                  {...registerForm.register('userType')}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="">Select your role</option>
+                  <option value="learner">Learn new skills</option>
+                  <option value="tutor">Teach others</option>
+                  <option value="both">Both learn and teach</option>
+                </select>
+                {registerForm.formState.errors.userType && (
+                  <p className="text-sm text-red-600">
+                    {registerForm.formState.errors.userType.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="city">City</Label>
+                  <Input
+                    id="city"
+                    placeholder="New York"
+                    {...registerForm.register('city')}
+                  />
+                  {registerForm.formState.errors.city && (
+                    <p className="text-sm text-red-600">
+                      {registerForm.formState.errors.city.message}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="country">Country</Label>
+                  <Input
+                    id="country"
+                    placeholder="United States"
+                    {...registerForm.register('country')}
+                  />
+                  {registerForm.formState.errors.country && (
+                    <p className="text-sm text-red-600">
+                      {registerForm.formState.errors.country.message}
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2">
