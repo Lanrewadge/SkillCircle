@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useAuthStore } from '@/stores/authStore'
@@ -12,16 +13,25 @@ import {
   User,
   Settings,
   LogOut,
-  BookOpen
+  BookOpen,
+  CreditCard
 } from 'lucide-react'
 
 export default function Header() {
   const router = useRouter()
   const { user, logout } = useAuthStore()
+  const [searchQuery, setSearchQuery] = useState('')
 
   const handleLogout = () => {
     logout()
     router.push('/')
+  }
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      router.push(`/dashboard/browse?search=${encodeURIComponent(searchQuery.trim())}`)
+    }
   }
 
   const getInitials = (name: string) => {
@@ -47,37 +57,46 @@ export default function Header() {
           </div>
 
           {/* Search Bar */}
-          <div className="flex-1 max-w-lg mx-8">
-            <div className="relative">
+          <div className="flex-1 max-w-lg mx-4 sm:mx-8">
+            <form onSubmit={handleSearch} className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search skills, teachers..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               />
-            </div>
+            </form>
           </div>
 
           {/* Navigation */}
-          <nav className="flex items-center space-x-4">
+          <nav className="flex items-center space-x-1 sm:space-x-4">
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/dashboard" className="flex items-center space-x-1">
+              <Link href="/dashboard/browse" className="flex items-center space-x-1">
                 <Search className="w-4 h-4" />
                 <span className="hidden sm:inline">Browse</span>
               </Link>
             </Button>
 
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/messages" className="flex items-center space-x-1">
+              <Link href="/dashboard/messages" className="flex items-center space-x-1">
                 <MessageCircle className="w-4 h-4" />
-                <span className="hidden sm:inline">Messages</span>
+                <span className="hidden md:inline">Messages</span>
               </Link>
             </Button>
 
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/sessions" className="flex items-center space-x-1">
+              <Link href="/dashboard/calendar" className="flex items-center space-x-1">
                 <Calendar className="w-4 h-4" />
-                <span className="hidden sm:inline">Sessions</span>
+                <span className="hidden md:inline">Calendar</span>
+              </Link>
+            </Button>
+
+            <Button variant="ghost" size="sm" className="hidden sm:flex" asChild>
+              <Link href="/dashboard/payments" className="flex items-center space-x-1">
+                <CreditCard className="w-4 h-4" />
+                <span className="hidden lg:inline">Payments</span>
               </Link>
             </Button>
 
@@ -98,14 +117,28 @@ export default function Header() {
               {/* Dropdown Menu */}
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                 <Link
-                  href="/profile"
+                  href="/dashboard/profile"
                   className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 >
                   <User className="w-4 h-4 mr-3" />
                   Profile
                 </Link>
                 <Link
-                  href="/settings"
+                  href="/dashboard/payments"
+                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  <CreditCard className="w-4 h-4 mr-3" />
+                  Payments & Billing
+                </Link>
+                <Link
+                  href="/dashboard/skills"
+                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  <BookOpen className="w-4 h-4 mr-3" />
+                  Skills
+                </Link>
+                <Link
+                  href="/dashboard/notifications"
                   className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 >
                   <Settings className="w-4 h-4 mr-3" />

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useSkillStore } from '@/stores/skillStore'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -23,6 +23,7 @@ import {
 
 export default function BrowsePage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const {
     categories,
     skills,
@@ -42,7 +43,14 @@ export default function BrowsePage() {
     fetchCategories()
     fetchSkills()
     searchTeachers({ isTeacher: true, limit: 20 })
-  }, [fetchCategories, fetchSkills, searchTeachers])
+
+    // Handle search query from URL parameters
+    const searchParam = searchParams.get('search')
+    if (searchParam) {
+      setSearchQuery(searchParam)
+      handleSearch(searchParam)
+    }
+  }, [fetchCategories, fetchSkills, searchTeachers, searchParams])
 
   const handleSearch = (query: string) => {
     setSearchQuery(query)
