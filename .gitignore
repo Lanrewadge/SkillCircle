@@ -91,3 +91,7 @@ generated/
 # Development tracking
 DEVELOPMENT_LOG.md
 CONVERSATION_LOG.md
+
+# Claude Code files
+.claude/
+*.claude
