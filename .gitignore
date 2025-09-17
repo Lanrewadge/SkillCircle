@@ -88,6 +88,3 @@ web-build/
 generated/
 *.generated.*
 
-# Development tracking
-DEVELOPMENT_LOG.md
-CONVERSATION_LOG.md
