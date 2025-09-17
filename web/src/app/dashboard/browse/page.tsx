@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useSkillStore } from '@/stores/skillStore'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -15,10 +16,13 @@ import {
   Users,
   BookOpen,
   Filter,
-  Loader2
+  Loader2,
+  Calendar,
+  MessageCircle
 } from 'lucide-react'
 
 export default function BrowsePage() {
+  const router = useRouter()
   const {
     categories,
     skills,
@@ -275,9 +279,19 @@ export default function BrowsePage() {
                           </span>
                           <span className="text-gray-500"> starting</span>
                         </div>
-                        <Button size="sm">
-                          View Profile
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => router.push(`/dashboard/book?teacher=${teacher.id}&skill=${teacher.userSkills[0]?.skill.id}`)}
+                          >
+                            <Calendar className="h-3 w-3 mr-1" />
+                            Book
+                          </Button>
+                          <Button size="sm">
+                            View Profile
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
