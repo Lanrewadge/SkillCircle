@@ -183,6 +183,86 @@ app.post('/api/messages', (req, res) => {
   res.json({ success: true, message: newMessage });
 });
 
+// Analytics endpoints
+app.get('/api/analytics/overview', (req, res) => {
+  res.json({
+    totalSessions: 69,
+    hoursLearned: 103.5,
+    averageRating: 4.8,
+    skillsMastered: 3,
+    monthlyGrowth: {
+      sessions: 12,
+      hours: 8,
+      rating: 0.2,
+      skills: 1
+    }
+  });
+});
+
+app.get('/api/analytics/performance', (req, res) => {
+  res.json([
+    {
+      skill: 'JavaScript',
+      sessionsCompleted: 24,
+      averageRating: 4.8,
+      totalEarnings: 1200,
+      hoursSpent: 36,
+      improvementRate: 15,
+      progressPercentage: 85
+    },
+    {
+      skill: 'Python',
+      sessionsCompleted: 18,
+      averageRating: 4.6,
+      totalEarnings: 900,
+      hoursSpent: 27,
+      improvementRate: 12,
+      progressPercentage: 72
+    },
+    {
+      skill: 'React',
+      sessionsCompleted: 15,
+      averageRating: 4.9,
+      totalEarnings: 750,
+      hoursSpent: 22.5,
+      improvementRate: 18,
+      progressPercentage: 68
+    }
+  ]);
+});
+
+app.get('/api/analytics/goals', (req, res) => {
+  res.json([
+    {
+      id: '1',
+      title: 'Complete 30 Sessions This Month',
+      current: 25,
+      target: 30,
+      category: 'Learning',
+      status: 'on-track',
+      deadline: '2025-09-30'
+    },
+    {
+      id: '2',
+      title: 'Earn $1500 in Revenue',
+      current: 1250,
+      target: 1500,
+      category: 'Financial',
+      status: 'on-track',
+      deadline: '2025-09-30'
+    },
+    {
+      id: '3',
+      title: 'Maintain 4.8+ Rating',
+      current: 4.8,
+      target: 4.8,
+      category: 'Quality',
+      status: 'achieved',
+      deadline: '2025-09-30'
+    }
+  ]);
+});
+
 app.listen(port, () => {
   console.log(`🚀 Backend server running at http://localhost:${port}`);
   console.log(`📋 Health check: http://localhost:${port}/health`);
