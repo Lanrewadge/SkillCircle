@@ -600,6 +600,264 @@ app.get('/api/profile/reviews', (req, res) => {
   ]);
 });
 
+// Learning path endpoints
+app.get('/api/learning/paths', (req, res) => {
+  res.json([
+    {
+      id: '1',
+      title: 'Complete React Development',
+      description: 'Master React from basics to advanced concepts including hooks, context, and state management.',
+      category: 'Web Development',
+      difficulty: 'Intermediate',
+      duration: '8 weeks',
+      progress: 65,
+      totalModules: 12,
+      completedModules: 8,
+      instructor: {
+        name: 'Sarah Johnson',
+        avatar: '/avatars/sarah.jpg',
+        rating: 4.9
+      },
+      skills: ['React', 'JavaScript', 'JSX', 'Hooks', 'State Management'],
+      nextSession: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      estimatedCompletion: '3 weeks',
+      certificate: true,
+      enrolled: true
+    },
+    {
+      id: '2',
+      title: 'Python for Data Science',
+      description: 'Learn Python programming with focus on data analysis, visualization, and machine learning.',
+      category: 'Data Science',
+      difficulty: 'Beginner',
+      duration: '10 weeks',
+      progress: 30,
+      totalModules: 15,
+      completedModules: 4,
+      instructor: {
+        name: 'Michael Chen',
+        avatar: '/avatars/michael.jpg',
+        rating: 4.8
+      },
+      skills: ['Python', 'Pandas', 'NumPy', 'Matplotlib', 'Scikit-learn'],
+      nextSession: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+      estimatedCompletion: '7 weeks',
+      certificate: true,
+      enrolled: true
+    },
+    {
+      id: '3',
+      title: 'Full Stack JavaScript',
+      description: 'Complete full-stack development with Node.js, Express, MongoDB, and React.',
+      category: 'Full Stack',
+      difficulty: 'Advanced',
+      duration: '12 weeks',
+      progress: 0,
+      totalModules: 18,
+      completedModules: 0,
+      instructor: {
+        name: 'Alex Rodriguez',
+        avatar: '/avatars/alex.jpg',
+        rating: 4.7
+      },
+      skills: ['Node.js', 'Express', 'MongoDB', 'React', 'JavaScript'],
+      estimatedCompletion: '12 weeks',
+      certificate: true,
+      enrolled: false
+    }
+  ]);
+});
+
+app.get('/api/learning/modules/current', (req, res) => {
+  res.json([
+    {
+      id: '1',
+      title: 'React Hooks Deep Dive',
+      type: 'video',
+      duration: 45,
+      completed: false,
+      progress: 60,
+      resources: 3
+    },
+    {
+      id: '2',
+      title: 'State Management with Context',
+      type: 'live-session',
+      duration: 90,
+      completed: false,
+      progress: 0,
+      dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      resources: 5
+    },
+    {
+      id: '3',
+      title: 'Building a Todo App',
+      type: 'project',
+      duration: 120,
+      completed: true,
+      progress: 100,
+      resources: 8
+    },
+    {
+      id: '4',
+      title: 'React Performance Quiz',
+      type: 'quiz',
+      duration: 15,
+      completed: true,
+      progress: 100,
+      resources: 1
+    }
+  ]);
+});
+
+app.get('/api/learning/achievements', (req, res) => {
+  res.json([
+    {
+      id: '1',
+      title: 'First Steps',
+      description: 'Completed your first learning module',
+      icon: '🎯',
+      unlockedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      points: 50,
+      category: 'Progress'
+    },
+    {
+      id: '2',
+      title: 'Speed Learner',
+      description: 'Completed 5 modules in one week',
+      icon: '⚡',
+      unlockedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      points: 100,
+      category: 'Speed'
+    },
+    {
+      id: '3',
+      title: 'Quiz Master',
+      description: 'Scored 100% on 10 quizzes',
+      icon: '🧠',
+      unlockedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+      points: 200,
+      category: 'Knowledge'
+    },
+    {
+      id: '4',
+      title: 'Consistency King',
+      description: 'Maintained a 30-day learning streak',
+      icon: '👑',
+      unlockedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      points: 300,
+      category: 'Consistency'
+    }
+  ]);
+});
+
+app.get('/api/learning/stats', (req, res) => {
+  res.json({
+    learningStreak: {
+      current: 12,
+      longest: 45,
+      unit: 'days'
+    },
+    hoursThisWeek: 8.5,
+    hoursThisMonth: 24.3,
+    modulesCompleted: 24,
+    achievementPoints: 1250,
+    skillsLearning: 5,
+    certificatesEarned: 2,
+    nextMilestone: {
+      type: 'streak',
+      target: 30,
+      current: 12,
+      reward: '🏆 Consistency Master Badge'
+    }
+  });
+});
+
+app.post('/api/learning/paths/:id/enroll', (req, res) => {
+  const { id } = req.params;
+  res.json({
+    success: true,
+    message: `Successfully enrolled in learning path ${id}`,
+    enrollmentId: `enroll_${id}_${Date.now()}`
+  });
+});
+
+app.put('/api/learning/modules/:id/progress', (req, res) => {
+  const { id } = req.params;
+  const { progress } = req.body;
+  res.json({
+    success: true,
+    message: `Progress updated for module ${id}`,
+    progress,
+    completed: progress >= 100
+  });
+});
+
+app.post('/api/learning/modules/:id/complete', (req, res) => {
+  const { id } = req.params;
+  res.json({
+    success: true,
+    message: `Module ${id} marked as completed`,
+    pointsEarned: 25,
+    newAchievements: []
+  });
+});
+
+app.get('/api/learning/progress/:pathId', (req, res) => {
+  const { pathId } = req.params;
+  res.json({
+    pathId,
+    overallProgress: 65,
+    totalModules: 12,
+    completedModules: 8,
+    currentModule: {
+      id: '1',
+      title: 'React Hooks Deep Dive',
+      progress: 60
+    },
+    timeSpent: 450, // minutes
+    estimatedTimeRemaining: 180, // minutes
+    nextSession: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    recentActivity: [
+      {
+        date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        action: 'Completed module: React Performance Quiz',
+        points: 25
+      },
+      {
+        date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        action: 'Started module: React Hooks Deep Dive',
+        points: 0
+      }
+    ]
+  });
+});
+
+app.get('/api/learning/recommendations', (req, res) => {
+  res.json([
+    {
+      id: 'rec1',
+      type: 'path',
+      title: 'Advanced React Patterns',
+      description: 'Take your React skills to the next level',
+      reason: 'Based on your progress in React Development',
+      difficulty: 'Advanced',
+      duration: '6 weeks',
+      rating: 4.8
+    },
+    {
+      id: 'rec2',
+      type: 'module',
+      title: 'TypeScript Fundamentals',
+      description: 'Learn TypeScript to improve your React code',
+      reason: 'Complements your React learning path',
+      difficulty: 'Intermediate',
+      duration: '2 weeks',
+      rating: 4.9
+    }
+  ]);
+});
+
 app.listen(port, () => {
   console.log(`🚀 Backend server running at http://localhost:${port}`);
   console.log(`📋 Health check: http://localhost:${port}/health`);
