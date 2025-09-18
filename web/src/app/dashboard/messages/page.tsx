@@ -1,271 +1,283 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useMessageStore } from '@/stores/messageStore'
-import { useAuthStore } from '@/stores/authStore'
+import { useState } from 'react'
+import MessageCenter from '@/components/messaging/MessageCenter'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
-  Send,
-  Search,
   MessageCircle,
   Phone,
   Video,
-  MoreVertical,
-  Loader2
+  Calendar,
+  Settings,
+  Bell,
+  Archive,
+  Star,
+  Users
 } from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
+
+const quickStats = [
+  {
+    label: 'Active Conversations',
+    value: '12',
+    change: '+3 from last week',
+    icon: MessageCircle,
+    color: 'text-blue-600'
+  },
+  {
+    label: 'Scheduled Sessions',
+    value: '5',
+    change: '2 upcoming today',
+    icon: Calendar,
+    color: 'text-green-600'
+  },
+  {
+    label: 'Video Calls',
+    value: '8',
+    change: 'This week',
+    icon: Video,
+    color: 'text-purple-600'
+  },
+  {
+    label: 'Response Rate',
+    value: '98%',
+    change: 'Average 2min',
+    icon: Star,
+    color: 'text-yellow-600'
+  }
+]
+
+const recentActivity = [
+  {
+    id: '1',
+    type: 'message',
+    user: 'Sarah Johnson',
+    action: 'sent you a message',
+    time: '2 minutes ago',
+    avatar: '👩‍🏫'
+  },
+  {
+    id: '2',
+    type: 'call',
+    user: 'Michael Chen',
+    action: 'started a video call',
+    time: '15 minutes ago',
+    avatar: '👨‍💻'
+  },
+  {
+    id: '3',
+    type: 'booking',
+    user: 'Emma Wilson',
+    action: 'booked a session',
+    time: '1 hour ago',
+    avatar: '👩‍🎨'
+  },
+  {
+    id: '4',
+    type: 'review',
+    user: 'David Park',
+    action: 'left a 5-star review',
+    time: '3 hours ago',
+    avatar: '👨‍🚀'
+  }
+]
 
 export default function MessagesPage() {
-  const { user, token } = useAuthStore()
-  const {
-    conversations,
-    activeConversation,
-    messages,
-    loading,
-    isConnected,
-    initializeSocket,
-    fetchConversations,
-    selectConversation,
-    sendMessage
-  } = useMessageStore()
+  const [activeTab, setActiveTab] = useState('messages')
 
-  const [messageInput, setMessageInput] = useState('')
-  const [searchQuery, setSearchQuery] = useState('')
-
-  useEffect(() => {
-    if (token) {
-      initializeSocket(token)
-      fetchConversations()
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'message':
+        return <MessageCircle className="h-4 w-4 text-blue-600" />
+      case 'call':
+        return <Video className="h-4 w-4 text-green-600" />
+      case 'booking':
+        return <Calendar className="h-4 w-4 text-purple-600" />
+      case 'review':
+        return <Star className="h-4 w-4 text-yellow-600" />
+      default:
+        return <Bell className="h-4 w-4 text-gray-600" />
     }
-
-    return () => {
-      useMessageStore.getState().disconnectSocket()
-    }
-  }, [token, initializeSocket, fetchConversations])
-
-  const handleSendMessage = async () => {
-    if (!messageInput.trim() || !activeConversation) return
-
-    await sendMessage(messageInput, activeConversation.id)
-    setMessageInput('')
-  }
-
-  const filteredConversations = conversations.filter(conv =>
-    conv.participants.some(p =>
-      p.user.name.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  )
-
-  const getOtherParticipant = (conversation: any) => {
-    return conversation.participants.find((p: any) => p.user.id !== user?.id)?.user
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
-        {/* Conversations List */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center space-x-2">
-                <MessageCircle className="w-5 h-5" />
-                <span>Messages</span>
-              </CardTitle>
-              <div className="flex items-center space-x-2">
-                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-                <span className="text-xs text-gray-500">
-                  {isConnected ? 'Online' : 'Offline'}
-                </span>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Messages & Communication</h1>
+          <p className="text-gray-600">Stay connected with your learning community</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm">
+            <Settings className="h-4 w-4 mr-2" />
+            Settings
+          </Button>
+          <Button variant="outline" size="sm">
+            <Archive className="h-4 w-4 mr-2" />
+            Archive
+          </Button>
+        </div>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {quickStats.map((stat, index) => (
+          <Card key={index}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">{stat.label}</p>
+                  <p className="text-2xl font-bold">{stat.value}</p>
+                  <p className="text-xs text-gray-500 mt-1">{stat.change}</p>
+                </div>
+                <stat.icon className={`h-8 w-8 ${stat.color}`} />
               </div>
-            </div>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Search conversations..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="divide-y">
-              {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                </div>
-              ) : filteredConversations.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <MessageCircle className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <p>No conversations yet</p>
-                  <p className="text-sm">Start a conversation with a teacher!</p>
-                </div>
-              ) : (
-                filteredConversations.map((conversation) => {
-                  const otherUser = getOtherParticipant(conversation)
-                  const isActive = activeConversation?.id === conversation.id
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-                  return (
-                    <button
-                      key={conversation.id}
-                      onClick={() => selectConversation(conversation.id)}
-                      className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${
-                        isActive ? 'bg-blue-50 border-r-2 border-blue-500' : ''
-                      }`}
-                    >
-                      <div className="flex items-start space-x-3">
-                        <Avatar className="w-12 h-12">
-                          <AvatarImage src={otherUser?.avatar} alt={otherUser?.name} />
-                          <AvatarFallback>
-                            {otherUser?.name?.split(' ').map((n: string) => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <h3 className="font-medium truncate">
-                              {otherUser?.name}
-                            </h3>
-                            {conversation.lastMessage && (
-                              <span className="text-xs text-gray-500">
-                                {formatDistanceToNow(new Date(conversation.lastMessage.createdAt), {
-                                  addSuffix: true
-                                })}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-600 truncate mt-1">
-                            {conversation.lastMessage?.content || 'No messages yet'}
-                          </p>
-                        </div>
-                        {conversation.unreadCount > 0 && (
-                          <Badge className="min-w-[20px] h-5 text-xs rounded-full flex items-center justify-center">
-                            {conversation.unreadCount}
-                          </Badge>
-                        )}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Main Content */}
+        <div className="lg:col-span-3">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="messages" className="flex items-center gap-2">
+                <MessageCircle className="h-4 w-4" />
+                Messages
+              </TabsTrigger>
+              <TabsTrigger value="calls" className="flex items-center gap-2">
+                <Video className="h-4 w-4" />
+                Video Calls
+              </TabsTrigger>
+              <TabsTrigger value="groups" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Groups
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="messages">
+              <MessageCenter />
+            </TabsContent>
+
+            <TabsContent value="calls">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Video Calls</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-12">
+                    <Video className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Video Call Center</h3>
+                    <p className="text-gray-600 mb-4">Start or join video calls with your tutors and learners</p>
+                    <Button className="bg-green-600 hover:bg-green-700">
+                      <Video className="h-4 w-4 mr-2" />
+                      Start New Call
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="groups">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Study Groups</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-12">
+                    <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Study Groups</h3>
+                    <p className="text-gray-600 mb-4">Join or create study groups with other learners</p>
+                    <Button className="bg-purple-600 hover:bg-purple-700">
+                      <Users className="h-4 w-4 mr-2" />
+                      Create Group
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Recent Activity */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Recent Activity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {recentActivity.map((activity) => (
+                  <div key={activity.id} className="flex items-start gap-3">
+                    <div className="text-lg">{activity.avatar}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1">
+                        {getActivityIcon(activity.type)}
+                        <p className="text-sm">
+                          <span className="font-medium">{activity.user}</span>
+                          <span className="text-gray-600"> {activity.action}</span>
+                        </p>
                       </div>
-                    </button>
-                  )
-                })
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Chat Area */}
-        <Card className="lg:col-span-2 flex flex-col">
-          {activeConversation ? (
-            <>
-              {/* Chat Header */}
-              <CardHeader className="border-b">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="w-10 h-10">
-                      <AvatarImage
-                        src={getOtherParticipant(activeConversation)?.avatar}
-                        alt={getOtherParticipant(activeConversation)?.name}
-                      />
-                      <AvatarFallback>
-                        {getOtherParticipant(activeConversation)?.name
-                          ?.split(' ')
-                          .map((n: string) => n[0])
-                          .join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="font-medium">
-                        {getOtherParticipant(activeConversation)?.name}
-                      </h3>
-                      <p className="text-sm text-gray-500">Online</p>
+                      <p className="text-xs text-gray-500">{activity.time}</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Button variant="ghost" size="sm">
-                      <Phone className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <Video className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="w-4 h-4" />
-                    </Button>
-                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Quick Actions */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button className="w-full justify-start" variant="outline">
+                <MessageCircle className="h-4 w-4 mr-2" />
+                New Message
+              </Button>
+              <Button className="w-full justify-start" variant="outline">
+                <Video className="h-4 w-4 mr-2" />
+                Start Video Call
+              </Button>
+              <Button className="w-full justify-start" variant="outline">
+                <Calendar className="h-4 w-4 mr-2" />
+                Schedule Session
+              </Button>
+              <Button className="w-full justify-start" variant="outline">
+                <Users className="h-4 w-4 mr-2" />
+                Create Group
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Communication Tips */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">💡 Communication Tips</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3 text-sm text-gray-600">
+                <div className="flex items-start gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <p>Respond to messages within 24 hours to maintain good ratings</p>
                 </div>
-              </CardHeader>
-
-              {/* Messages */}
-              <CardContent className="flex-1 p-4 overflow-y-auto">
-                <div className="space-y-4">
-                  {messages.map((message) => {
-                    const isOwn = message.senderId === user?.id
-
-                    return (
-                      <div
-                        key={message.id}
-                        className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div
-                          className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                            isOwn
-                              ? 'bg-blue-500 text-white'
-                              : 'bg-gray-100 text-gray-900'
-                          }`}
-                        >
-                          <p className="text-sm">{message.content}</p>
-                          <p
-                            className={`text-xs mt-1 ${
-                              isOwn ? 'text-blue-100' : 'text-gray-500'
-                            }`}
-                          >
-                            {formatDistanceToNow(new Date(message.createdAt), {
-                              addSuffix: true
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                    )
-                  })}
+                <div className="flex items-start gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <p>Use video calls for complex explanations and demonstrations</p>
                 </div>
-              </CardContent>
-
-              {/* Message Input */}
-              <div className="border-t p-4">
-                <div className="flex items-center space-x-2">
-                  <Input
-                    placeholder="Type a message..."
-                    value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault()
-                        handleSendMessage()
-                      }
-                    }}
-                    className="flex-1"
-                  />
-                  <Button onClick={handleSendMessage} disabled={!messageInput.trim()}>
-                    <Send className="w-4 h-4" />
-                  </Button>
+                <div className="flex items-start gap-2">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <p>Set clear expectations before each session</p>
                 </div>
               </div>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <MessageCircle className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Select a conversation
-                </h3>
-                <p className="text-gray-500">
-                  Choose a conversation from the sidebar to start messaging
-                </p>
-              </div>
-            </div>
-          )}
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )
