@@ -8,7 +8,8 @@ import {
   Calendar,
   User,
   Home,
-  CreditCard
+  CreditCard,
+  BookOpen
 } from 'lucide-react'
 
 export default function MobileNav() {
@@ -17,9 +18,9 @@ export default function MobileNav() {
   const navItems = [
     { href: '/dashboard', icon: Home, label: 'Home' },
     { href: '/dashboard/browse', icon: Search, label: 'Browse' },
+    { href: '/dashboard/learning', icon: BookOpen, label: 'Learning' },
     { href: '/dashboard/calendar', icon: Calendar, label: 'Calendar' },
     { href: '/dashboard/messages', icon: MessageCircle, label: 'Messages' },
-    { href: '/dashboard/payments', icon: CreditCard, label: 'Payments' },
     { href: '/dashboard/profile', icon: User, label: 'Profile' },
   ]
 

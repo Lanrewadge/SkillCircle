@@ -80,6 +80,13 @@ export default function Header() {
             </Button>
 
             <Button variant="ghost" size="sm" asChild>
+              <Link href="/dashboard/learning" className="flex items-center space-x-1">
+                <BookOpen className="w-4 h-4" />
+                <span className="hidden sm:inline">Learning</span>
+              </Link>
+            </Button>
+
+            <Button variant="ghost" size="sm" asChild>
               <Link href="/dashboard/messages" className="flex items-center space-x-1">
                 <MessageCircle className="w-4 h-4" />
                 <span className="hidden md:inline">Messages</span>
@@ -131,11 +138,11 @@ export default function Header() {
                   Payments & Billing
                 </Link>
                 <Link
-                  href="/dashboard/skills"
+                  href="/dashboard/learning"
                   className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 >
                   <BookOpen className="w-4 h-4 mr-3" />
-                  Skills
+                  Learning Dashboard
                 </Link>
                 <Link
                   href="/dashboard/notifications"
