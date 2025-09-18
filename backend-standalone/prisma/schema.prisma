@@ -53,7 +53,7 @@ model UserProfile {
   userId            String   @unique
   maxDistance       Int      @default(25) // kilometers
   preferredMeetingType String @default("both") // "in-person", "online", "both"
-  languagePreferences String? // Comma-separated languages
+  languagePreferences String[] @default([])
   ageRangeMin       Int?
   ageRangeMax       Int?
   timezone          String   @default("UTC")
@@ -119,17 +119,8 @@ model Skill {
   name        String
   description String
   categoryId  String
-  tags        String?  // Comma-separated tags
+  tags        String[] @default([])
   icon        String?
-  difficulty  String   @default("BEGINNER") // BEGINNER, INTERMEDIATE, ADVANCED, EXPERT
-  duration    String?  // e.g., "3-6 months", "2 weeks"
-  prerequisites String? // Comma-separated prerequisites
-  learningOutcomes String? // Comma-separated outcomes
-  skillLevel  String   @default("PRACTICAL") // THEORETICAL, PRACTICAL, CERTIFICATION
-  popularity  Int      @default(0)
-  averageRating Float  @default(0)
-  totalReviews Int     @default(0)
-  isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -139,64 +130,33 @@ model Skill {
   matches     Match[]
   requests    MatchRequest[]
   sessions    Session[]
-  roadmaps    SkillRoadmap[]
-  content     SkillContent[]
 
   @@unique([name, categoryId])
   @@map("skills")
 }
 
-model SkillRoadmap {
-  id          String   @id @default(cuid())
-  skillId     String
-  title       String
-  description String
-  estimatedHours Int?
-  phases      String   // JSON string of learning phases
-  resources   String   // JSON string of resources
-  projects    String   // JSON string of projects
-  certifications String // JSON string of certifications
-  careerPaths String   // JSON string of career paths
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
-
-  @@map("skill_roadmaps")
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
 }
 
-model SkillContent {
-  id          String   @id @default(cuid())
-  skillId     String
-  type        String   // "article", "video", "tutorial", "exercise", "quiz"
-  title       String
-  description String?
-  content     String   // Rich text content or URL
-  level       String   @default("BEGINNER") // BEGINNER, INTERMEDIATE, ADVANCED
-  duration    Int?     // Duration in minutes
-  order       Int      @default(0)
-  tags        String?  // Comma-separated tags
-  isPublic    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
-
-  @@map("skill_content")
+enum UserSkillRole {
+  TEACHER
+  LEARNER
 }
 
 model UserSkill {
   id             String        @id @default(cuid())
   userId         String
   skillId        String
-  role           String        // "TEACHER" or "LEARNER"
-  level          String        // "BEGINNER", "INTERMEDIATE", "ADVANCED", "EXPERT"
+  role           UserSkillRole
+  level          SkillLevel
   experience     String?
   hourlyRate     Float?
   currency       String?       @default("USD")
-  certifications String? // Comma-separated certifications
+  certifications String[]      @default([])
   isActive       Boolean       @default(true)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
@@ -239,7 +199,7 @@ model MatchRequest {
   skillId          String
   message          String?
   status           String   @default("pending") // "pending", "accepted", "declined", "cancelled"
-  proposedSchedules String? // JSON string of proposed schedules
+  proposedSchedules Json[]  @default([])
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -262,7 +222,7 @@ model Session {
   duration     Int      // in minutes
   status       String   @default("scheduled") // "scheduled", "confirmed", "in_progress", "completed", "cancelled", "no_show"
   meetingType  String   // "in-person" or "online"
-  location     String?  // JSON string: address, coordinates, or meeting URL
+  location     Json?    // address, coordinates, or meeting URL
   price        Float
   currency     String   @default("USD")
   notes        String?
@@ -287,7 +247,7 @@ model Review {
   revieweeId     String
   rating         Int      // 1-5
   comment        String?
-  skills         String   // JSON string: communication, knowledge, patience, punctuality scores
+  skills         Json     // communication, knowledge, patience, punctuality scores
   wouldRecommend Boolean  @default(true)
   createdAt      DateTime @default(now())
 
@@ -356,8 +316,8 @@ model Message {
   senderId       String
   content        String
   type           String   @default("text") // "text", "image", "file", "system", "session_proposal"
-  attachments    String?  // JSON string of attachments
-  metadata       String?  // JSON string of metadata
+  attachments    Json[]   @default([])
+  metadata       Json?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -388,7 +348,7 @@ model Notification {
   type    String   // "new_message", "new_match", "session_reminder", "payment_received", "review_received"
   title   String
   body    String
-  data    String?  // JSON string of notification data
+  data    Json?
   read    Boolean  @default(false)
   createdAt DateTime @default(now())
 

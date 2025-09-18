@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { body, validationResult } from 'express-validator';
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import { createError } from '../middleware/errorHandler';
 import { authenticate } from '../middleware/auth';
@@ -79,7 +79,7 @@ router.post('/register', [
 
     const token = jwt.sign(
       { id: user.id, email: user.email },
-      process.env.JWT_SECRET as string,
+      process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
@@ -142,7 +142,7 @@ router.post('/login', [
 
     const token = jwt.sign(
       { id: user.id, email: user.email },
-      process.env.JWT_SECRET as string,
+      process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 

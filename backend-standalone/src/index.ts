@@ -1,11 +1,11 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const dotenv = require('dotenv');
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-const rateLimit = require('express-rate-limit');
+import rateLimit from 'express-rate-limit';
 
 import { errorHandler } from './middleware/errorHandler';
 import { notFound } from './middleware/notFound';

@@ -6,10 +6,6 @@ import matchRoutes from './matches';
 import sessionRoutes from './sessions';
 import messageRoutes from './messages';
 import reviewRoutes from './reviews';
-import analyticsRoutes from './analytics';
-import notificationRoutes from './notifications';
-import profileRoutes from './profile';
-import learningRoutes from './learning';
 
 export const setupRoutes = (app: Express) => {
   // API prefix
@@ -32,14 +28,4 @@ export const setupRoutes = (app: Express) => {
   app.use(`${API_PREFIX}/sessions`, sessionRoutes);
   app.use(`${API_PREFIX}/messages`, messageRoutes);
   app.use(`${API_PREFIX}/reviews`, reviewRoutes);
-  app.use(`${API_PREFIX}/analytics`, analyticsRoutes);
-  app.use(`${API_PREFIX}/notifications`, notificationRoutes);
-  app.use(`${API_PREFIX}/profile`, profileRoutes);
-  app.use(`${API_PREFIX}/learning`, learningRoutes);
-
-  // Legacy API routes (for backward compatibility with simple-server.js)
-  app.use('/api/teachers', (req, res, next) => {
-    req.url = `/skills/teachers${req.url}`;
-    skillRoutes(req, res, next);
-  });
 };
