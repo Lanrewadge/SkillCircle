@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Bell, Check, MessageSquare, Calendar, Star, UserPlus, DollarSign, BookOpen, X } from 'lucide-react'
+import { Bell, Check, MessageSquare, Calendar, Star, UserPlus, DollarSign, BookOpen, X, Search, Settings, Filter, Archive } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatDistanceToNow } from 'date-fns'
+import { Input } from '@/components/ui/input'
 
 interface Notification {
   id: string
@@ -46,6 +47,8 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedNotifications, setSelectedNotifications] = useState<string[]>([])
 
   useEffect(() => {
     loadNotifications()
@@ -55,7 +58,18 @@ export default function NotificationsPage() {
     try {
       setLoading(true)
 
-      // Mock notifications data
+      // Fetch from API
+      const response = await fetch('http://localhost:3002/api/notifications')
+      const data = await response.json()
+
+      const apiNotifications: Notification[] = data.map((n: any) => ({
+        ...n,
+        createdAt: new Date(n.createdAt)
+      }))
+
+      setNotifications(apiNotifications)
+
+      // Fallback to mock data if API fails
       const mockNotifications: Notification[] = [
         {
           id: '1',
@@ -127,9 +141,26 @@ export default function NotificationsPage() {
         }
       ]
 
-      setNotifications(mockNotifications)
+      // Use mock data as fallback
+      if (apiNotifications.length === 0) {
+        setNotifications(mockNotifications)
+      }
     } catch (error) {
       console.error('Failed to load notifications:', error)
+      // Use mock data on error
+      const mockNotifications: Notification[] = [
+        {
+          id: '1',
+          type: 'message',
+          title: 'New message from Sarah Chen',
+          body: 'Hi! I see you\'re interested in learning Italian cooking. I\'d love to help you get started!',
+          read: false,
+          createdAt: new Date(Date.now() - 30 * 60 * 1000),
+          avatar: '/avatars/sarah.jpg',
+          actionUrl: '/dashboard/messages'
+        }
+      ]
+      setNotifications(mockNotifications)
     } finally {
       setLoading(false)
     }
@@ -137,48 +168,87 @@ export default function NotificationsPage() {
 
   const markAsRead = async (notificationId: string) => {
     try {
+      // Optimistic update
       setNotifications(notifications.map(notification =>
         notification.id === notificationId
           ? { ...notification, read: true }
           : notification
       ))
-      // TODO: Call API to mark notification as read
+
+      // Call API
+      await fetch(`http://localhost:3002/api/notifications/${notificationId}/read`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' }
+      })
     } catch (error) {
       console.error('Failed to mark notification as read:', error)
+      // Revert optimistic update
+      loadNotifications()
     }
   }
 
   const markAllAsRead = async () => {
     try {
+      // Optimistic update
       setNotifications(notifications.map(notification => ({ ...notification, read: true })))
-      // TODO: Call API to mark all notifications as read
+
+      // Call API
+      await fetch('http://localhost:3002/api/notifications/mark-all-read', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' }
+      })
     } catch (error) {
       console.error('Failed to mark all notifications as read:', error)
+      // Revert optimistic update
+      loadNotifications()
     }
   }
 
   const deleteNotification = async (notificationId: string) => {
     try {
+      // Optimistic update
       setNotifications(notifications.filter(notification => notification.id !== notificationId))
-      // TODO: Call API to delete notification
+
+      // Call API
+      await fetch(`http://localhost:3002/api/notifications/${notificationId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      })
     } catch (error) {
       console.error('Failed to delete notification:', error)
+      // Revert optimistic update
+      loadNotifications()
     }
   }
 
   const getFilteredNotifications = () => {
+    let filtered = notifications
+
     switch (activeTab) {
       case 'unread':
-        return notifications.filter(n => !n.read)
+        filtered = notifications.filter(n => !n.read)
+        break
       case 'messages':
-        return notifications.filter(n => n.type === 'message')
+        filtered = notifications.filter(n => n.type === 'message')
+        break
       case 'sessions':
-        return notifications.filter(n => n.type === 'session' || n.type === 'reminder')
+        filtered = notifications.filter(n => n.type === 'session' || n.type === 'reminder')
+        break
       case 'matches':
-        return notifications.filter(n => n.type === 'match' || n.type === 'review')
+        filtered = notifications.filter(n => n.type === 'match' || n.type === 'review')
+        break
       default:
-        return notifications
+        filtered = notifications
     }
+
+    if (searchQuery) {
+      filtered = filtered.filter(n =>
+        n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        n.body.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    }
+
+    return filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
   }
 
   const unreadCount = notifications.filter(n => !n.read).length
@@ -212,12 +282,27 @@ export default function NotificationsPage() {
             Stay updated with messages, sessions, and matches
           </p>
         </div>
-        {unreadCount > 0 && (
-          <Button onClick={markAllAsRead} variant="outline">
-            <Check className="h-4 w-4 mr-2" />
-            Mark all as read
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search notifications..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 w-64"
+            />
+          </div>
+          {unreadCount > 0 && (
+            <Button onClick={markAllAsRead} variant="outline">
+              <Check className="h-4 w-4 mr-2" />
+              Mark all as read
+            </Button>
+          )}
+          <Button variant="outline">
+            <Settings className="h-4 w-4 mr-2" />
+            Preferences
           </Button>
-        )}
+        </div>
       </div>
 
       {/* Notification Tabs */}
