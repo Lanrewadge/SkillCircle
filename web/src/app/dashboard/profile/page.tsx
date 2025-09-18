@@ -20,17 +20,60 @@ import {
   Camera,
   Settings,
   Award,
-  DollarSign
+  DollarSign,
+  Upload,
+  Save,
+  X,
+  Plus,
+  Trash2,
+  Eye,
+  EyeOff,
+  Bell,
+  Shield,
+  CreditCard,
+  Globe,
+  Mail,
+  Phone,
+  Link,
+  Youtube,
+  Twitter,
+  Linkedin,
+  Github
 } from 'lucide-react'
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuthStore()
   const [isEditing, setIsEditing] = useState(false)
+  const [activeTab, setActiveTab] = useState('overview')
   const [formData, setFormData] = useState({
     name: user?.name || '',
     bio: user?.bio || '',
     city: user?.city || '',
-    country: user?.country || ''
+    country: user?.country || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    website: user?.website || '',
+    socialLinks: {
+      linkedin: user?.socialLinks?.linkedin || '',
+      github: user?.socialLinks?.github || '',
+      twitter: user?.socialLinks?.twitter || '',
+      youtube: user?.socialLinks?.youtube || ''
+    }
+  })
+  const [profilePicture, setProfilePicture] = useState(null)
+  const [showPrivate, setShowPrivate] = useState(false)
+  const [notifications, setNotifications] = useState({
+    email: true,
+    sms: false,
+    push: true,
+    marketing: false
+  })
+  const [privacy, setPrivacy] = useState({
+    profileVisible: true,
+    showEmail: false,
+    showPhone: false,
+    allowMessages: true,
+    showStats: true
   })
 
   const handleSave = async () => {
@@ -249,12 +292,115 @@ export default function ProfilePage() {
       </Card>
 
       {/* Profile Content */}
-      <Tabs defaultValue="skills" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="skills">My Skills</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="skills">Skills</TabsTrigger>
           <TabsTrigger value="reviews">Reviews</TabsTrigger>
+          <TabsTrigger value="social">Social</TabsTrigger>
+          <TabsTrigger value="privacy">Privacy</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Profile Overview</CardTitle>
+              <CardDescription>
+                Complete your profile to attract more students and opportunities
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {/* Profile Completion */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-medium">Profile Completion</h3>
+                    <span className="text-sm text-gray-600">75%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: '75%' }}></div>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-2">
+                    Add more information to increase your visibility
+                  </p>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2">Upload Profile Photo</h4>
+                    <p className="text-sm text-gray-600 mb-3">
+                      A profile photo makes you more trustworthy
+                    </p>
+                    <Button size="sm" variant="outline">
+                      <Camera className="w-4 h-4 mr-2" />
+                      Upload Photo
+                    </Button>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2">Add Bio</h4>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Tell students about your experience
+                    </p>
+                    <Button size="sm" variant="outline">
+                      <Edit3 className="w-4 h-4 mr-2" />
+                      Add Bio
+                    </Button>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2">Verify Account</h4>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Increase trust with verified badge
+                    </p>
+                    <Button size="sm" variant="outline">
+                      <Shield className="w-4 h-4 mr-2" />
+                      Get Verified
+                    </Button>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2">Connect Social Media</h4>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Show your professional presence
+                    </p>
+                    <Button size="sm" variant="outline">
+                      <Link className="w-4 h-4 mr-2" />
+                      Connect
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Recent Activity */}
+                <div>
+                  <h3 className="font-medium mb-4">Recent Activity</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">Profile updated</p>
+                        <p className="text-xs text-gray-600">2 hours ago</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">New skill added: React Development</p>
+                        <p className="text-xs text-gray-600">1 day ago</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">Received 5-star review</p>
+                        <p className="text-xs text-gray-600">3 days ago</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="skills" className="space-y-6">
           <Card>
@@ -392,6 +538,347 @@ export default function ProfilePage() {
                 <Button variant="destructive">
                   Delete Account
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="social" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Social Media Links</CardTitle>
+              <CardDescription>
+                Connect your social media accounts to showcase your professional presence
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <Linkedin className="w-5 h-5 text-blue-600" />
+                  <div className="flex-1">
+                    <Label htmlFor="linkedin">LinkedIn</Label>
+                    <Input
+                      id="linkedin"
+                      placeholder="https://linkedin.com/in/yourprofile"
+                      value={formData.socialLinks.linkedin}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        socialLinks: { ...formData.socialLinks, linkedin: e.target.value }
+                      })}
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <Github className="w-5 h-5" />
+                  <div className="flex-1">
+                    <Label htmlFor="github">GitHub</Label>
+                    <Input
+                      id="github"
+                      placeholder="https://github.com/yourusername"
+                      value={formData.socialLinks.github}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        socialLinks: { ...formData.socialLinks, github: e.target.value }
+                      })}
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <Twitter className="w-5 h-5 text-blue-400" />
+                  <div className="flex-1">
+                    <Label htmlFor="twitter">Twitter</Label>
+                    <Input
+                      id="twitter"
+                      placeholder="https://twitter.com/yourusername"
+                      value={formData.socialLinks.twitter}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        socialLinks: { ...formData.socialLinks, twitter: e.target.value }
+                      })}
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <Youtube className="w-5 h-5 text-red-600" />
+                  <div className="flex-1">
+                    <Label htmlFor="youtube">YouTube</Label>
+                    <Input
+                      id="youtube"
+                      placeholder="https://youtube.com/c/yourchannel"
+                      value={formData.socialLinks.youtube}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        socialLinks: { ...formData.socialLinks, youtube: e.target.value }
+                      })}
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <Globe className="w-5 h-5 text-gray-600" />
+                  <div className="flex-1">
+                    <Label htmlFor="website">Personal Website</Label>
+                    <Input
+                      id="website"
+                      placeholder="https://yourwebsite.com"
+                      value={formData.website}
+                      onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <Button className="mt-4">
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Social Links
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="privacy" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Privacy Settings</CardTitle>
+              <CardDescription>
+                Control who can see your information and contact you
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium">Profile Visibility</h3>
+                    <p className="text-sm text-gray-600">Make your profile visible to other users</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => setPrivacy({ ...privacy, profileVisible: !privacy.profileVisible })}
+                  >
+                    {privacy.profileVisible ? <Eye className="w-4 h-4 mr-2" /> : <EyeOff className="w-4 h-4 mr-2" />}
+                    {privacy.profileVisible ? 'Public' : 'Private'}
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium">Show Email</h3>
+                    <p className="text-sm text-gray-600">Display your email address on your profile</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => setPrivacy({ ...privacy, showEmail: !privacy.showEmail })}
+                  >
+                    {privacy.showEmail ? <Eye className="w-4 h-4 mr-2" /> : <EyeOff className="w-4 h-4 mr-2" />}
+                    {privacy.showEmail ? 'Visible' : 'Hidden'}
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium">Show Phone Number</h3>
+                    <p className="text-sm text-gray-600">Display your phone number on your profile</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => setPrivacy({ ...privacy, showPhone: !privacy.showPhone })}
+                  >
+                    {privacy.showPhone ? <Eye className="w-4 h-4 mr-2" /> : <EyeOff className="w-4 h-4 mr-2" />}
+                    {privacy.showPhone ? 'Visible' : 'Hidden'}
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium">Allow Messages</h3>
+                    <p className="text-sm text-gray-600">Let other users send you messages</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => setPrivacy({ ...privacy, allowMessages: !privacy.allowMessages })}
+                  >
+                    {privacy.allowMessages ? <Mail className="w-4 h-4 mr-2" /> : <X className="w-4 h-4 mr-2" />}
+                    {privacy.allowMessages ? 'Enabled' : 'Disabled'}
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium">Show Statistics</h3>
+                    <p className="text-sm text-gray-600">Display your teaching stats and ratings</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => setPrivacy({ ...privacy, showStats: !privacy.showStats })}
+                  >
+                    {privacy.showStats ? <Eye className="w-4 h-4 mr-2" /> : <EyeOff className="w-4 h-4 mr-2" />}
+                    {privacy.showStats ? 'Public' : 'Private'}
+                  </Button>
+                </div>
+                <Button>
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Privacy Settings
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="settings" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Account Settings</CardTitle>
+              <CardDescription>
+                Manage your account preferences and security settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Personal Information */}
+              <div>
+                <h3 className="font-medium mb-4">Personal Information</h3>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="email">Email Address</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <Button variant="outline">
+                    <Save className="w-4 h-4 mr-2" />
+                    Update Contact Info
+                  </Button>
+                </div>
+              </div>
+
+              {/* Notification Preferences */}
+              <div className="border-t pt-6">
+                <h3 className="font-medium mb-4">Notification Preferences</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Email Notifications</h4>
+                      <p className="text-sm text-gray-600">Receive notifications via email</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => setNotifications({ ...notifications, email: !notifications.email })}
+                    >
+                      {notifications.email ? <Bell className="w-4 h-4 mr-2" /> : <X className="w-4 h-4 mr-2" />}
+                      {notifications.email ? 'Enabled' : 'Disabled'}
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Push Notifications</h4>
+                      <p className="text-sm text-gray-600">Receive push notifications in your browser</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => setNotifications({ ...notifications, push: !notifications.push })}
+                    >
+                      {notifications.push ? <Bell className="w-4 h-4 mr-2" /> : <X className="w-4 h-4 mr-2" />}
+                      {notifications.push ? 'Enabled' : 'Disabled'}
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">SMS Notifications</h4>
+                      <p className="text-sm text-gray-600">Receive important updates via SMS</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => setNotifications({ ...notifications, sms: !notifications.sms })}
+                    >
+                      {notifications.sms ? <Phone className="w-4 h-4 mr-2" /> : <X className="w-4 h-4 mr-2" />}
+                      {notifications.sms ? 'Enabled' : 'Disabled'}
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Marketing Communications</h4>
+                      <p className="text-sm text-gray-600">Receive marketing emails and promotions</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => setNotifications({ ...notifications, marketing: !notifications.marketing })}
+                    >
+                      {notifications.marketing ? <Mail className="w-4 h-4 mr-2" /> : <X className="w-4 h-4 mr-2" />}
+                      {notifications.marketing ? 'Enabled' : 'Disabled'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Security */}
+              <div className="border-t pt-6">
+                <h3 className="font-medium mb-4">Security</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Change Password</h4>
+                      <p className="text-sm text-gray-600">Update your account password</p>
+                    </div>
+                    <Button variant="outline">
+                      <Shield className="w-4 h-4 mr-2" />
+                      Change Password
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Two-Factor Authentication</h4>
+                      <p className="text-sm text-gray-600">Add an extra layer of security to your account</p>
+                    </div>
+                    <Button variant="outline">
+                      <Shield className="w-4 h-4 mr-2" />
+                      Enable 2FA
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Payment Methods</h4>
+                      <p className="text-sm text-gray-600">Manage how you receive payments</p>
+                    </div>
+                    <Button variant="outline">
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Manage Cards
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Danger Zone */}
+              <div className="border-t pt-6">
+                <h3 className="font-medium text-red-600 mb-4">Danger Zone</h3>
+                <div className="space-y-3 p-4 border border-red-200 rounded-lg bg-red-50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium text-red-800">Export Account Data</h4>
+                      <p className="text-sm text-red-600">Download a copy of all your account data</p>
+                    </div>
+                    <Button variant="outline">
+                      <Upload className="w-4 h-4 mr-2" />
+                      Export Data
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium text-red-800">Delete Account</h4>
+                      <p className="text-sm text-red-600">Permanently delete your account and all data</p>
+                    </div>
+                    <Button variant="destructive">
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete Account
+                    </Button>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>

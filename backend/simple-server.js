@@ -360,6 +360,246 @@ app.get('/api/notifications/stats', (req, res) => {
   });
 });
 
+// User profile endpoints
+app.get('/api/profile', (req, res) => {
+  res.json({
+    id: '1',
+    name: 'Alice Johnson',
+    email: 'alice@example.com',
+    phone: '+1 (555) 123-4567',
+    bio: 'Experienced software developer with 8+ years in React and Node.js. Passionate about teaching and helping others grow their coding skills.',
+    avatar: '/avatars/alice.jpg',
+    city: 'San Francisco',
+    country: 'United States',
+    website: 'https://alicejohnson.dev',
+    socialLinks: {
+      linkedin: 'https://linkedin.com/in/alicejohnson',
+      github: 'https://github.com/alicejohnson',
+      twitter: 'https://twitter.com/alicejohnson',
+      youtube: 'https://youtube.com/c/alicejohnson'
+    },
+    isTeacher: true,
+    isLearner: false,
+    verified: true,
+    joinDate: '2023-01-15',
+    stats: {
+      totalStudents: 42,
+      totalSessions: 156,
+      totalEarnings: 8540,
+      avgRating: 4.8,
+      completionRate: 98
+    },
+    settings: {
+      privacy: {
+        profileVisible: true,
+        showEmail: false,
+        showPhone: false,
+        allowMessages: true,
+        showStats: true
+      },
+      notifications: {
+        email: true,
+        sms: false,
+        push: true,
+        marketing: false
+      }
+    }
+  });
+});
+
+app.put('/api/profile', (req, res) => {
+  const { name, bio, city, country, email, phone, website, socialLinks } = req.body;
+  res.json({
+    success: true,
+    message: 'Profile updated successfully',
+    data: {
+      name,
+      bio,
+      city,
+      country,
+      email,
+      phone,
+      website,
+      socialLinks
+    }
+  });
+});
+
+app.post('/api/profile/avatar', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Avatar updated successfully',
+    avatarUrl: '/avatars/updated-avatar.jpg'
+  });
+});
+
+app.put('/api/profile/privacy', (req, res) => {
+  const { privacy } = req.body;
+  res.json({
+    success: true,
+    message: 'Privacy settings updated successfully',
+    privacy
+  });
+});
+
+app.put('/api/profile/notifications', (req, res) => {
+  const { notifications } = req.body;
+  res.json({
+    success: true,
+    message: 'Notification preferences updated successfully',
+    notifications
+  });
+});
+
+app.get('/api/profile/activity', (req, res) => {
+  res.json([
+    {
+      id: '1',
+      type: 'profile_update',
+      title: 'Profile updated',
+      description: 'Updated bio and contact information',
+      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+    },
+    {
+      id: '2',
+      type: 'skill_added',
+      title: 'New skill added',
+      description: 'Added React Development to your skills',
+      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    },
+    {
+      id: '3',
+      type: 'review_received',
+      title: 'Received 5-star review',
+      description: 'New review from John Smith for Python tutorial',
+      timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+    }
+  ]);
+});
+
+app.get('/api/profile/skills', (req, res) => {
+  res.json([
+    {
+      id: 1,
+      name: 'React Development',
+      level: 'Expert',
+      students: 24,
+      rating: 4.8,
+      hourlyRate: 75,
+      category: 'Technology',
+      description: 'Modern React development including hooks, context, and state management'
+    },
+    {
+      id: 2,
+      name: 'Python Programming',
+      level: 'Advanced',
+      students: 18,
+      rating: 4.7,
+      hourlyRate: 65,
+      category: 'Technology',
+      description: 'Python programming for beginners to advanced, including web development and data analysis'
+    },
+    {
+      id: 3,
+      name: 'JavaScript Fundamentals',
+      level: 'Expert',
+      students: 35,
+      rating: 4.9,
+      hourlyRate: 70,
+      category: 'Technology',
+      description: 'Core JavaScript concepts, ES6+, async programming, and modern development practices'
+    }
+  ]);
+});
+
+app.post('/api/profile/skills', (req, res) => {
+  const { name, level, hourlyRate, category, description } = req.body;
+  res.json({
+    success: true,
+    message: 'Skill added successfully',
+    skill: {
+      id: Date.now(),
+      name,
+      level,
+      hourlyRate,
+      category,
+      description,
+      students: 0,
+      rating: 0
+    }
+  });
+});
+
+app.put('/api/profile/skills/:id', (req, res) => {
+  const { id } = req.params;
+  const { name, level, hourlyRate, category, description } = req.body;
+  res.json({
+    success: true,
+    message: `Skill ${id} updated successfully`,
+    skill: {
+      id,
+      name,
+      level,
+      hourlyRate,
+      category,
+      description
+    }
+  });
+});
+
+app.delete('/api/profile/skills/:id', (req, res) => {
+  const { id } = req.params;
+  res.json({
+    success: true,
+    message: `Skill ${id} deleted successfully`
+  });
+});
+
+app.get('/api/profile/reviews', (req, res) => {
+  res.json([
+    {
+      id: 1,
+      rating: 5,
+      comment: 'Alice is an amazing React teacher! She explains complex concepts clearly and is very patient.',
+      student: 'John Smith',
+      studentAvatar: '/avatars/john.jpg',
+      date: '2024-01-15',
+      skill: 'React Development',
+      sessionDuration: 90
+    },
+    {
+      id: 2,
+      rating: 5,
+      comment: 'Great Python lessons. Very knowledgeable and provides excellent real-world examples.',
+      student: 'Sarah Johnson',
+      studentAvatar: '/avatars/sarah.jpg',
+      date: '2024-01-10',
+      skill: 'Python Programming',
+      sessionDuration: 60
+    },
+    {
+      id: 3,
+      rating: 4,
+      comment: 'Learned a lot about advanced JavaScript patterns. Highly recommend!',
+      student: 'Mike Davis',
+      studentAvatar: '/avatars/mike.jpg',
+      date: '2024-01-05',
+      skill: 'JavaScript Fundamentals',
+      sessionDuration: 75
+    },
+    {
+      id: 4,
+      rating: 5,
+      comment: 'Fantastic teacher! Made React hooks easy to understand.',
+      student: 'Emily Chen',
+      studentAvatar: '/avatars/emily.jpg',
+      date: '2023-12-28',
+      skill: 'React Development',
+      sessionDuration: 120
+    }
+  ]);
+});
+
 app.listen(port, () => {
   console.log(`🚀 Backend server running at http://localhost:${port}`);
   console.log(`📋 Health check: http://localhost:${port}/health`);
