@@ -13,6 +13,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAuthStore } from '@/stores/authStore'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import TwoFactorSetup from '@/components/auth/TwoFactorSetup'
+import TwoFactorVerification from '@/components/auth/TwoFactorVerification'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -47,6 +49,14 @@ export default function AuthPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [activeTab, setActiveTab] = useState('login')
 
+  // 2FA states
+  const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false)
+  const [showTwoFactorVerification, setShowTwoFactorVerification] = useState(false)
+  const [twoFactorData, setTwoFactorData] = useState<{
+    email: string
+    tempToken: string
+  } | null>(null)
+
   useEffect(() => {
     const tab = searchParams.get('tab')
     if (tab === 'register') {
@@ -63,22 +73,74 @@ export default function AuthPage() {
   })
 
   const onLogin = async (data: LoginFormData) => {
-    const success = await login(data.email, data.password)
-    if (success) {
-      // Get user from auth store to determine redirect
-      const user = useAuthStore.getState().user
-      if (user) {
-        if (user.isTeacher && !user.isLearner) {
-          router.push('/dashboard/calendar') // Tutors see their calendar first
-        } else if (user.isLearner && !user.isTeacher) {
-          router.push('/dashboard/browse') // Learners see browse page first
-        } else {
-          router.push('/dashboard') // Both roles see general dashboard
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password
+        }),
+      })
+
+      const result = await response.json()
+
+      if (result.requiresTwoFactor) {
+        // User has 2FA enabled, show verification form
+        setTwoFactorData({
+          email: data.email,
+          tempToken: result.tempToken
+        })
+        setShowTwoFactorVerification(true)
+      } else if (result.success) {
+        // Regular login success
+        const success = await login(data.email, data.password)
+        if (success) {
+          handleSuccessfulLogin()
         }
       } else {
-        router.push('/dashboard')
+        // Login failed
+        loginForm.setError('root', {
+          message: result.message || 'Login failed'
+        })
       }
+    } catch (error) {
+      loginForm.setError('root', {
+        message: 'Network error. Please try again.'
+      })
     }
+  }
+
+  const handleSuccessfulLogin = () => {
+    const user = useAuthStore.getState().user
+    if (user) {
+      if (user.isTeacher && !user.isLearner) {
+        router.push('/dashboard/calendar') // Tutors see their calendar first
+      } else if (user.isLearner && !user.isTeacher) {
+        router.push('/dashboard/browse') // Learners see browse page first
+      } else {
+        router.push('/dashboard') // Both roles see general dashboard
+      }
+    } else {
+      router.push('/dashboard')
+    }
+  }
+
+  const handle2FAVerificationSuccess = (token: string, user: any) => {
+    // Store auth data in auth store
+    useAuthStore.getState().setUser(user)
+    useAuthStore.getState().setToken(token)
+
+    setShowTwoFactorVerification(false)
+    setTwoFactorData(null)
+    handleSuccessfulLogin()
+  }
+
+  const handle2FASetupComplete = () => {
+    setShowTwoFactorSetup(false)
+    handleSuccessfulLogin()
   }
 
   const onRegister = async (data: RegisterFormData) => {
@@ -94,15 +156,50 @@ export default function AuthPage() {
 
     const success = await register(registerData)
     if (success) {
-      // Redirect based on user type
-      if (userType === 'learner') {
-        router.push('/dashboard?tab=browse')
-      } else if (userType === 'tutor') {
-        router.push('/dashboard/skills')
+      // Check if 2FA setup is required
+      const result = useAuthStore.getState().user
+      if (result?.requiresTwoFactorSetup) {
+        setShowTwoFactorSetup(true)
       } else {
-        router.push('/dashboard/onboarding')
+        // Redirect based on user type
+        if (userType === 'learner') {
+          router.push('/dashboard?tab=browse')
+        } else if (userType === 'tutor') {
+          router.push('/dashboard/skills')
+        } else {
+          router.push('/dashboard/onboarding')
+        }
       }
     }
+  }
+
+  // Show 2FA setup modal after registration
+  if (showTwoFactorSetup) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <TwoFactorSetup
+          onSetupComplete={handle2FASetupComplete}
+          onCancel={() => setShowTwoFactorSetup(false)}
+        />
+      </div>
+    )
+  }
+
+  // Show 2FA verification modal during login
+  if (showTwoFactorVerification && twoFactorData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <TwoFactorVerification
+          email={twoFactorData.email}
+          tempToken={twoFactorData.tempToken}
+          onVerificationSuccess={handle2FAVerificationSuccess}
+          onCancel={() => {
+            setShowTwoFactorVerification(false)
+            setTwoFactorData(null)
+          }}
+        />
+      </div>
+    )
   }
 
   return (

@@ -2,10 +2,12 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useAuthStore } from '@/stores/authStore'
+import { SimpleThemeToggle } from '@/components/ui/theme-toggle'
+import SearchModal from '@/components/search/SearchModal'
 import {
   Search,
   MessageCircle,
@@ -21,6 +23,7 @@ export default function Header() {
   const router = useRouter()
   const { user, logout } = useAuthStore()
   const [searchQuery, setSearchQuery] = useState('')
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -42,8 +45,21 @@ export default function Header() {
       .toUpperCase()
   }
 
+  // Keyboard shortcut for search
+  useEffect(() => {
+    const handleKeydown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setIsSearchModalOpen(true)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeydown)
+    return () => document.removeEventListener('keydown', handleKeydown)
+  }, [])
+
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <header className="bg-background border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -52,22 +68,24 @@ export default function Header() {
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <BookOpen className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-gray-900">SkillCircle</span>
+              <span className="text-xl font-bold text-foreground">SkillCircle</span>
             </Link>
           </div>
 
-          {/* Search Bar */}
+          {/* Search Button */}
           <div className="flex-1 max-w-lg mx-4 sm:mx-8">
-            <form onSubmit={handleSearch} className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Search skills, teachers..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              />
-            </form>
+            <Button
+              variant="outline"
+              className="w-full justify-start text-muted-foreground"
+              onClick={() => setIsSearchModalOpen(true)}
+            >
+              <Search className="mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Search skills, teachers...</span>
+              <span className="sm:hidden">Search...</span>
+              <kbd className="pointer-events-none ml-auto inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+                <span className="text-xs">⌘</span>K
+              </kbd>
+            </Button>
           </div>
 
           {/* Navigation */}
@@ -107,9 +125,12 @@ export default function Header() {
               </Link>
             </Button>
 
+            {/* Theme Toggle */}
+            <SimpleThemeToggle />
+
             {/* User Menu */}
             <div className="relative group">
-              <button className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100">
+              <button className="flex items-center space-x-2 p-2 rounded-lg hover:bg-accent">
                 <Avatar className="w-8 h-8">
                   <AvatarImage src={user?.avatar} alt={user?.name} />
                   <AvatarFallback>
@@ -122,38 +143,38 @@ export default function Header() {
               </button>
 
               {/* Dropdown Menu */}
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+              <div className="absolute right-0 mt-2 w-48 bg-popover rounded-md shadow-lg py-1 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 border border-border">
                 <Link
                   href="/dashboard/profile"
-                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  className="flex items-center px-4 py-2 text-sm text-popover-foreground hover:bg-accent"
                 >
                   <User className="w-4 h-4 mr-3" />
                   Profile
                 </Link>
                 <Link
                   href="/dashboard/payments"
-                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  className="flex items-center px-4 py-2 text-sm text-popover-foreground hover:bg-accent"
                 >
                   <CreditCard className="w-4 h-4 mr-3" />
                   Payments & Billing
                 </Link>
                 <Link
                   href="/dashboard/learning"
-                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  className="flex items-center px-4 py-2 text-sm text-popover-foreground hover:bg-accent"
                 >
                   <BookOpen className="w-4 h-4 mr-3" />
                   Learning Dashboard
                 </Link>
                 <Link
                   href="/dashboard/notifications"
-                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  className="flex items-center px-4 py-2 text-sm text-popover-foreground hover:bg-accent"
                 >
                   <Settings className="w-4 h-4 mr-3" />
                   Settings
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-accent"
                 >
                   <LogOut className="w-4 h-4 mr-3" />
                   Sign Out
@@ -163,6 +184,12 @@ export default function Header() {
           </nav>
         </div>
       </div>
+
+      {/* Search Modal */}
+      <SearchModal
+        isOpen={isSearchModalOpen}
+        onClose={() => setIsSearchModalOpen(false)}
+      />
     </header>
   )
 }

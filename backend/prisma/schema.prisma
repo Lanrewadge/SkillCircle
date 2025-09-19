@@ -19,6 +19,12 @@ model User {
   rating      Float    @default(0)
   reviewCount Int      @default(0)
   verified    Boolean  @default(false)
+
+  // 2FA fields
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret  String?
+  backupCodes      String? // JSON string of backup codes
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

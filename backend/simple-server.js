@@ -24,16 +24,51 @@ app.get('/api/auth/me', (req, res) => {
 });
 
 app.post('/api/auth/login', (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, twoFactorCode } = req.body;
+
+  // Mock user with 2FA enabled
+  const mockUser = {
+    id: '1',
+    name: 'Test User',
+    email,
+    isTeacher: true,
+    isLearner: true,
+    twoFactorEnabled: true
+  };
+
+  // Simulate password verification (always pass for demo)
+  if (!email || !password) {
+    return res.status(400).json({
+      success: false,
+      message: 'Email and password are required'
+    });
+  }
+
+  // If 2FA is enabled and no code provided, request 2FA
+  if (mockUser.twoFactorEnabled && !twoFactorCode) {
+    return res.json({
+      success: false,
+      requiresTwoFactor: true,
+      message: 'Two-factor authentication code required',
+      tempToken: 'temp-2fa-token'
+    });
+  }
+
+  // If 2FA code provided, verify it
+  if (mockUser.twoFactorEnabled && twoFactorCode) {
+    // Mock verification (accept any 6-digit code for demo)
+    if (!/^\d{6}$/.test(twoFactorCode)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid two-factor authentication code'
+      });
+    }
+  }
+
+  // Successful login
   res.json({
     success: true,
-    user: {
-      id: '1',
-      name: 'Test User',
-      email,
-      isTeacher: true,
-      isLearner: true
-    },
+    user: mockUser,
     token: 'mock-jwt-token'
   });
 });
@@ -49,7 +84,139 @@ app.post('/api/auth/register', (req, res) => {
       isTeacher: userType === 'tutor' || userType === 'both',
       isLearner: userType === 'learner' || userType === 'both',
       city,
-      country
+      country,
+      twoFactorEnabled: false
+    },
+    token: 'mock-jwt-token',
+    requiresTwoFactorSetup: true
+  });
+});
+
+// 2FA Endpoints
+
+// Setup 2FA for a user
+app.post('/api/auth/2fa/setup', (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({
+      success: false,
+      message: 'Email is required'
+    });
+  }
+
+  // Mock 2FA secret generation
+  const secret = {
+    base32: 'JBSWY3DPEHPK3PXP',
+    otpauth_url: `otpauth://totp/SkillCircle:${email}?secret=JBSWY3DPEHPK3PXP&issuer=SkillCircle`
+  };
+
+  // Mock QR code (placeholder image)
+  const qrCodeUrl = `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==`;
+
+  // Mock backup codes
+  const backupCodes = ['A1B2C3D4', 'E5F6G7H8', 'I9J0K1L2', 'M3N4O5P6', 'Q7R8S9T0'];
+
+  res.json({
+    success: true,
+    data: {
+      secret: secret.base32,
+      qrCodeUrl,
+      manualEntryKey: secret.base32,
+      backupCodes
+    }
+  });
+});
+
+// Verify and enable 2FA
+app.post('/api/auth/2fa/verify', (req, res) => {
+  const { email, token, secret } = req.body;
+
+  if (!email || !token || !secret) {
+    return res.status(400).json({
+      success: false,
+      message: 'Email, token, and secret are required'
+    });
+  }
+
+  // Mock verification (accept any 6-digit code)
+  if (!/^\d{6}$/.test(token)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid token format'
+    });
+  }
+
+  res.json({
+    success: true,
+    message: 'Two-factor authentication enabled successfully',
+    backupCodes: ['A1B2C3D4', 'E5F6G7H8', 'I9J0K1L2', 'M3N4O5P6', 'Q7R8S9T0']
+  });
+});
+
+// Disable 2FA
+app.post('/api/auth/2fa/disable', (req, res) => {
+  const { email, password, token } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({
+      success: false,
+      message: 'Email and password are required'
+    });
+  }
+
+  if (!token) {
+    return res.status(400).json({
+      success: false,
+      message: 'Two-factor authentication code required'
+    });
+  }
+
+  // Mock verification
+  if (!/^\d{6}$/.test(token)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid token format'
+    });
+  }
+
+  res.json({
+    success: true,
+    message: 'Two-factor authentication disabled successfully'
+  });
+});
+
+// Verify backup code
+app.post('/api/auth/2fa/backup-code', (req, res) => {
+  const { email, backupCode } = req.body;
+
+  if (!email || !backupCode) {
+    return res.status(400).json({
+      success: false,
+      message: 'Email and backup code are required'
+    });
+  }
+
+  // Mock backup codes
+  const validCodes = ['A1B2C3D4', 'E5F6G7H8', 'I9J0K1L2', 'M3N4O5P6', 'Q7R8S9T0'];
+
+  if (!validCodes.includes(backupCode.toUpperCase())) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid backup code'
+    });
+  }
+
+  res.json({
+    success: true,
+    message: 'Backup code verified successfully',
+    user: {
+      id: '1',
+      name: 'Test User',
+      email,
+      isTeacher: true,
+      isLearner: true,
+      twoFactorEnabled: true
     },
     token: 'mock-jwt-token'
   });

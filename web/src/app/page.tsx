@@ -1,20 +1,70 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { BookOpen, Users, MapPin, Star, MessageCircle, Calendar } from 'lucide-react'
+import { SimpleThemeToggle } from '@/components/ui/theme-toggle'
+import { SearchBar } from '@/components/ui/search-bar'
+import { BookOpen, Users, MapPin, Star, MessageCircle, Calendar, Menu } from 'lucide-react'
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      {/* Header */}
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between">
+            {/* Logo */}
+            <div className="flex items-center space-x-4">
+              <Link href="/" className="flex items-center space-x-2">
+                <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">SC</span>
+                </div>
+                <span className="font-bold text-xl text-foreground">SkillCircle</span>
+              </Link>
+            </div>
+
+            {/* Search Bar - Hidden on mobile */}
+            <div className="hidden md:flex flex-1 max-w-lg mx-8">
+              <SearchBar showButton={false} className="w-full" />
+            </div>
+
+            {/* Right side buttons */}
+            <div className="flex items-center space-x-4">
+              {/* Theme Toggle */}
+              <SimpleThemeToggle />
+
+              {/* Mobile Menu Button */}
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu className="h-5 w-5" />
+              </Button>
+
+              {/* Auth Buttons - Hidden on mobile */}
+              <div className="hidden md:flex items-center space-x-2">
+                <Button variant="ghost" asChild>
+                  <Link href="/auth/login">Login</Link>
+                </Button>
+                <Button asChild>
+                  <Link href="/auth/register">Sign Up</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Search Bar */}
+          <div className="md:hidden pb-4">
+            <SearchBar showButton={false} className="w-full" />
+          </div>
+        </div>
+      </header>
+
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-white">
+      <section className="relative overflow-hidden bg-background dark:bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+            <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
               Learn & Teach
               <span className="text-blue-600"> Skills Locally</span>
             </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+            <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
               Connect with passionate locals to learn new skills or share your expertise.
               From cooking to coding, music to languages - discover your next adventure.
             </p>
@@ -31,13 +81,13 @@ export default function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-24 bg-white">
+      <section className="py-24 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
               How SkillCircle Works
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Simple, safe, and effective way to connect learners with local experts
             </p>
           </div>
@@ -83,13 +133,13 @@ export default function HomePage() {
       </section>
 
       {/* Categories Section */}
-      <section className="py-24 bg-gray-50">
+      <section className="py-24 bg-muted/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
               Popular Categories
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-muted-foreground">
               Explore skills across diverse categories
             </p>
           </div>
@@ -108,8 +158,8 @@ export default function HomePage() {
               <Card key={category.name} className="hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="text-center p-6">
                   <div className="text-4xl mb-3">{category.icon}</div>
-                  <h3 className="font-semibold text-gray-900 mb-1">{category.name}</h3>
-                  <p className="text-sm text-gray-600">{category.count}</p>
+                  <h3 className="font-semibold text-foreground mb-1">{category.name}</h3>
+                  <p className="text-sm text-muted-foreground">{category.count}</p>
                 </CardContent>
               </Card>
             ))}
@@ -118,12 +168,12 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 bg-blue-600">
+      <section className="py-24 bg-blue-600 dark:bg-blue-700">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
             Ready to Start Your Learning Journey?
           </h2>
-          <p className="text-xl text-blue-100 mb-8">
+          <p className="text-xl text-blue-100 dark:text-blue-200 mb-8">
             Join thousands of learners and teachers in the SkillCircle community
           </p>
           <Button asChild size="lg" variant="secondary" className="px-8 py-3">
@@ -133,18 +183,18 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
+      <footer className="bg-gray-900 dark:bg-gray-950 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h3 className="text-2xl font-bold mb-4">SkillCircle</h3>
-            <p className="text-gray-400 mb-8">
+            <p className="text-gray-400 dark:text-gray-500 mb-8">
               Connecting learners with local experts
             </p>
             <div className="flex justify-center space-x-6">
-              <Link href="/about" className="text-gray-400 hover:text-white">About</Link>
-              <Link href="/privacy" className="text-gray-400 hover:text-white">Privacy</Link>
-              <Link href="/terms" className="text-gray-400 hover:text-white">Terms</Link>
-              <Link href="/contact" className="text-gray-400 hover:text-white">Contact</Link>
+              <Link href="/about" className="text-gray-400 dark:text-gray-500 hover:text-white">About</Link>
+              <Link href="/privacy" className="text-gray-400 dark:text-gray-500 hover:text-white">Privacy</Link>
+              <Link href="/terms" className="text-gray-400 dark:text-gray-500 hover:text-white">Terms</Link>
+              <Link href="/contact" className="text-gray-400 dark:text-gray-500 hover:text-white">Contact</Link>
             </div>
           </div>
         </div>
