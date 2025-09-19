@@ -16,7 +16,13 @@ import {
   Settings,
   LogOut,
   BookOpen,
-  CreditCard
+  CreditCard,
+  Menu,
+  X,
+  Home,
+  Users,
+  Star,
+  TrendingUp
 } from 'lucide-react'
 
 export default function Header() {
@@ -24,6 +30,7 @@ export default function Header() {
   const { user, logout } = useAuthStore()
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -88,48 +95,68 @@ export default function Header() {
             </Button>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex items-center space-x-1 sm:space-x-4">
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center space-x-4">
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/dashboard/browse" className="flex items-center space-x-1">
+              <Link href="/dashboard" className="flex items-center space-x-2">
+                <Home className="w-4 h-4" />
+                <span>Dashboard</span>
+              </Link>
+            </Button>
+
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/dashboard/browse" className="flex items-center space-x-2">
                 <Search className="w-4 h-4" />
-                <span className="hidden sm:inline">Browse</span>
+                <span>Browse Skills</span>
               </Link>
             </Button>
 
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/dashboard/learning" className="flex items-center space-x-1">
+              <Link href="/dashboard/learning" className="flex items-center space-x-2">
                 <BookOpen className="w-4 h-4" />
-                <span className="hidden sm:inline">Learning</span>
+                <span>My Learning</span>
               </Link>
             </Button>
 
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/dashboard/messages" className="flex items-center space-x-1">
+              <Link href="/dashboard/teachers" className="flex items-center space-x-2">
+                <Users className="w-4 h-4" />
+                <span>Find Teachers</span>
+              </Link>
+            </Button>
+
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/dashboard/messages" className="flex items-center space-x-2">
                 <MessageCircle className="w-4 h-4" />
-                <span className="hidden md:inline">Messages</span>
+                <span>Messages</span>
               </Link>
             </Button>
 
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/dashboard/calendar" className="flex items-center space-x-1">
-                <Calendar className="w-4 h-4" />
-                <span className="hidden md:inline">Calendar</span>
+              <Link href="/dashboard/progress" className="flex items-center space-x-2">
+                <TrendingUp className="w-4 h-4" />
+                <span>Progress</span>
               </Link>
             </Button>
+          </nav>
 
-            <Button variant="ghost" size="sm" className="hidden sm:flex" asChild>
-              <Link href="/dashboard/payments" className="flex items-center space-x-1">
-                <CreditCard className="w-4 h-4" />
-                <span className="hidden lg:inline">Payments</span>
-              </Link>
-            </Button>
-
+          {/* Right side items */}
+          <div className="flex items-center space-x-2">
             {/* Theme Toggle */}
             <SimpleThemeToggle />
 
-            {/* User Menu */}
-            <div className="relative group">
+            {/* Mobile Menu Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="lg:hidden"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </Button>
+
+            {/* User Menu - Desktop */}
+            <div className="hidden lg:block relative group">
               <button className="flex items-center space-x-2 p-2 rounded-lg hover:bg-accent">
                 <Avatar className="w-8 h-8">
                   <AvatarImage src={user?.avatar} alt={user?.name} />
@@ -137,7 +164,7 @@ export default function Header() {
                     {user?.name ? getInitials(user.name) : 'U'}
                   </AvatarFallback>
                 </Avatar>
-                <span className="hidden sm:inline text-sm font-medium">
+                <span className="text-sm font-medium">
                   {user?.name?.split(' ')[0]}
                 </span>
               </button>
@@ -159,11 +186,18 @@ export default function Header() {
                   Payments & Billing
                 </Link>
                 <Link
-                  href="/dashboard/learning"
+                  href="/dashboard/calendar"
                   className="flex items-center px-4 py-2 text-sm text-popover-foreground hover:bg-accent"
                 >
-                  <BookOpen className="w-4 h-4 mr-3" />
-                  Learning Dashboard
+                  <Calendar className="w-4 h-4 mr-3" />
+                  Calendar
+                </Link>
+                <Link
+                  href="/dashboard/reviews"
+                  className="flex items-center px-4 py-2 text-sm text-popover-foreground hover:bg-accent"
+                >
+                  <Star className="w-4 h-4 mr-3" />
+                  Reviews
                 </Link>
                 <Link
                   href="/dashboard/notifications"
@@ -172,6 +206,7 @@ export default function Header() {
                   <Settings className="w-4 h-4 mr-3" />
                   Settings
                 </Link>
+                <hr className="my-1 border-border" />
                 <button
                   onClick={handleLogout}
                   className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-accent"
@@ -181,9 +216,146 @@ export default function Header() {
                 </button>
               </div>
             </div>
-          </nav>
+          </div>
         </div>
       </div>
+
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="lg:hidden border-t border-border bg-background">
+          <div className="px-4 py-2 space-y-1">
+            {/* User Info - Mobile */}
+            <div className="flex items-center space-x-3 py-3 border-b border-border">
+              <Avatar className="w-10 h-10">
+                <AvatarImage src={user?.avatar} alt={user?.name} />
+                <AvatarFallback>
+                  {user?.name ? getInitials(user.name) : 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-foreground">{user?.name}</p>
+                <p className="text-xs text-muted-foreground">{user?.email}</p>
+              </div>
+            </div>
+
+            {/* Navigation Links - Mobile */}
+            <div className="space-y-1 py-2">
+              <Link
+                href="/dashboard"
+                className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm hover:bg-accent"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Home className="w-5 h-5" />
+                <span>Dashboard</span>
+              </Link>
+
+              <Link
+                href="/dashboard/browse"
+                className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm hover:bg-accent"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Search className="w-5 h-5" />
+                <span>Browse Skills</span>
+              </Link>
+
+              <Link
+                href="/dashboard/learning"
+                className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm hover:bg-accent"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <BookOpen className="w-5 h-5" />
+                <span>My Learning</span>
+              </Link>
+
+              <Link
+                href="/dashboard/teachers"
+                className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm hover:bg-accent"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Users className="w-5 h-5" />
+                <span>Find Teachers</span>
+              </Link>
+
+              <Link
+                href="/dashboard/messages"
+                className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm hover:bg-accent"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <MessageCircle className="w-5 h-5" />
+                <span>Messages</span>
+              </Link>
+
+              <Link
+                href="/dashboard/progress"
+                className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm hover:bg-accent"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <TrendingUp className="w-5 h-5" />
+                <span>Progress</span>
+              </Link>
+            </div>
+
+            {/* Account Actions - Mobile */}
+            <div className="space-y-1 py-2 border-t border-border">
+              <Link
+                href="/dashboard/profile"
+                className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm hover:bg-accent"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <User className="w-5 h-5" />
+                <span>Profile</span>
+              </Link>
+
+              <Link
+                href="/dashboard/payments"
+                className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm hover:bg-accent"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <CreditCard className="w-5 h-5" />
+                <span>Payments</span>
+              </Link>
+
+              <Link
+                href="/dashboard/calendar"
+                className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm hover:bg-accent"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Calendar className="w-5 h-5" />
+                <span>Calendar</span>
+              </Link>
+
+              <Link
+                href="/dashboard/reviews"
+                className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm hover:bg-accent"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Star className="w-5 h-5" />
+                <span>Reviews</span>
+              </Link>
+
+              <Link
+                href="/dashboard/notifications"
+                className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm hover:bg-accent"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Settings className="w-5 h-5" />
+                <span>Settings</span>
+              </Link>
+
+              <button
+                onClick={() => {
+                  handleLogout()
+                  setIsMobileMenuOpen(false)
+                }}
+                className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm hover:bg-accent w-full text-left"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Search Modal */}
       <SearchModal

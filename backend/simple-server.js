@@ -1,11 +1,60 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+
+// Import services
+const AIAssessmentService = require('./src/services/aiAssessmentService');
+const SkillSwapService = require('./src/services/skillSwapService');
+const SocialLearningService = require('./src/services/socialLearningService');
+const CollaborationService = require('./src/services/collaborationService');
+const CommunityService = require('./src/services/communityService');
+
+// Import middleware
+const errorHandler = require('./src/middleware/errorHandler');
+const { protect, optionalAuth, mockLogin, getCurrentUser } = require('./src/middleware/auth');
+
 const app = express();
 const port = 3002;
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// Initialize services
+const aiService = new AIAssessmentService();
+const swapService = new SkillSwapService();
+const socialService = new SocialLearningService();
+const collaborationService = new CollaborationService();
+const communityService = new CommunityService();
+
+// Security and logging middleware
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable for development
+  crossOriginEmbedderPolicy: false
+}));
+
+app.use(morgan('combined'));
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: {
+    success: false,
+    message: 'Too many requests from this IP, please try again later.'
+  }
+});
+
+app.use('/api/', limiter);
+
+// CORS configuration
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3001',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Basic health check
 app.get('/health', (req, res) => {
@@ -1556,7 +1605,1370 @@ app.get('/api/learning/recommendations', (req, res) => {
   ]);
 });
 
+// Global search endpoint
+app.get('/api/search', (req, res) => {
+  const { q, type, limit = 10, page = 1 } = req.query;
+
+  if (!q || q.trim().length < 2) {
+    return res.json({
+      success: true,
+      data: {
+        skills: [],
+        teachers: [],
+        content: [],
+        total: 0,
+        query: q
+      }
+    });
+  }
+
+  const searchQuery = q.toLowerCase().trim();
+
+  // Mock search results
+  const allSkills = [
+    {
+      id: '1',
+      name: 'React Development',
+      category: 'Technology & Programming',
+      description: 'Master modern React with hooks, context, state management, and best practices',
+      tags: 'JavaScript,Frontend,Web Development,React Hooks,Redux',
+      popularity: 95,
+      averageRating: 4.8,
+      type: 'skill'
+    },
+    {
+      id: '2',
+      name: 'Python Programming',
+      category: 'Technology & Programming',
+      description: 'Comprehensive Python programming from basics to advanced topics',
+      tags: 'Python,Backend,Automation,Scripting,Django',
+      popularity: 98,
+      averageRating: 4.7,
+      type: 'skill'
+    },
+    {
+      id: '3',
+      name: 'UI/UX Design',
+      category: 'Design & Creative Arts',
+      description: 'Comprehensive user interface and user experience design',
+      tags: 'UI Design,UX Research,Figma,Prototyping,User Testing',
+      popularity: 88,
+      averageRating: 4.6,
+      type: 'skill'
+    },
+    {
+      id: '4',
+      name: 'Spanish Conversation',
+      category: 'Languages & Communication',
+      description: 'Improve Spanish speaking fluency through conversation practice',
+      tags: 'Spanish,Conversation,Grammar,Pronunciation,Culture',
+      popularity: 91,
+      averageRating: 4.8,
+      type: 'skill'
+    },
+    {
+      id: '5',
+      name: 'Machine Learning',
+      category: 'Data Science & AI',
+      description: 'Introduction to machine learning algorithms and data science',
+      tags: 'Machine Learning,Python,Scikit-learn,Data Analysis,Statistics',
+      popularity: 92,
+      averageRating: 4.7,
+      type: 'skill'
+    }
+  ];
+
+  const allTeachers = [
+    {
+      id: '1',
+      name: 'Sarah Johnson',
+      skills: ['React Development', 'JavaScript Programming'],
+      rating: 4.9,
+      location: 'San Francisco, CA',
+      experience: '5+ years',
+      hourlyRate: 75,
+      avatar: '/avatars/sarah.jpg',
+      type: 'teacher'
+    },
+    {
+      id: '2',
+      name: 'Michael Chen',
+      skills: ['Python Programming', 'Data Science'],
+      rating: 4.8,
+      location: 'New York, NY',
+      experience: '7+ years',
+      hourlyRate: 85,
+      avatar: '/avatars/michael.jpg',
+      type: 'teacher'
+    },
+    {
+      id: '3',
+      name: 'Maria Rodriguez',
+      skills: ['Spanish Conversation', 'Language Learning'],
+      rating: 4.9,
+      location: 'Miami, FL',
+      experience: '10+ years',
+      hourlyRate: 45,
+      avatar: '/avatars/maria.jpg',
+      type: 'teacher'
+    },
+    {
+      id: '4',
+      name: 'Alex Thompson',
+      skills: ['UI/UX Design', 'Product Design'],
+      rating: 4.7,
+      location: 'Seattle, WA',
+      experience: '6+ years',
+      hourlyRate: 90,
+      avatar: '/avatars/alex.jpg',
+      type: 'teacher'
+    }
+  ];
+
+  const allContent = [
+    {
+      id: '1',
+      title: 'Getting Started with React Hooks',
+      type: 'tutorial',
+      description: 'Learn the fundamentals of React Hooks',
+      skill: 'React Development',
+      level: 'Beginner',
+      duration: 30,
+      rating: 4.8,
+      type: 'content'
+    },
+    {
+      id: '2',
+      title: 'Python for Beginners Complete Course',
+      type: 'course',
+      description: 'Complete Python programming course from scratch',
+      skill: 'Python Programming',
+      level: 'Beginner',
+      duration: 480,
+      rating: 4.7,
+      type: 'content'
+    },
+    {
+      id: '3',
+      title: 'Advanced JavaScript Patterns',
+      type: 'article',
+      description: 'Deep dive into advanced JavaScript design patterns',
+      skill: 'JavaScript Programming',
+      level: 'Advanced',
+      duration: 45,
+      rating: 4.6,
+      type: 'content'
+    }
+  ];
+
+  // Filter based on type
+  let results = { skills: [], teachers: [], content: [] };
+
+  if (!type || type === 'skill' || type === 'all') {
+    results.skills = allSkills.filter(skill =>
+      skill.name.toLowerCase().includes(searchQuery) ||
+      skill.description.toLowerCase().includes(searchQuery) ||
+      skill.tags.toLowerCase().includes(searchQuery) ||
+      skill.category.toLowerCase().includes(searchQuery)
+    );
+  }
+
+  if (!type || type === 'teacher' || type === 'all') {
+    results.teachers = allTeachers.filter(teacher =>
+      teacher.name.toLowerCase().includes(searchQuery) ||
+      teacher.skills.some(skill => skill.toLowerCase().includes(searchQuery)) ||
+      teacher.location.toLowerCase().includes(searchQuery)
+    );
+  }
+
+  if (!type || type === 'content' || type === 'all') {
+    results.content = allContent.filter(content =>
+      content.title.toLowerCase().includes(searchQuery) ||
+      content.description.toLowerCase().includes(searchQuery) ||
+      content.skill.toLowerCase().includes(searchQuery)
+    );
+  }
+
+  // Calculate total results
+  const total = results.skills.length + results.teachers.length + results.content.length;
+
+  // Apply pagination (simplified for this example)
+  const pageSize = Math.min(parseInt(limit), 50);
+  if (pageSize < total) {
+    if (results.skills.length > pageSize / 3) results.skills = results.skills.slice(0, Math.ceil(pageSize / 3));
+    if (results.teachers.length > pageSize / 3) results.teachers = results.teachers.slice(0, Math.ceil(pageSize / 3));
+    if (results.content.length > pageSize / 3) results.content = results.content.slice(0, Math.ceil(pageSize / 3));
+  }
+
+  res.json({
+    success: true,
+    data: {
+      ...results,
+      total,
+      query: q,
+      filters: {
+        type: type || 'all',
+        page: parseInt(page),
+        limit: pageSize
+      }
+    }
+  });
+});
+
+// Search suggestions endpoint
+app.get('/api/search/suggestions', (req, res) => {
+  const { q } = req.query;
+
+  if (!q || q.trim().length < 2) {
+    return res.json({
+      success: true,
+      data: []
+    });
+  }
+
+  const searchQuery = q.toLowerCase().trim();
+
+  const suggestions = [
+    'React Development',
+    'Python Programming',
+    'JavaScript Fundamentals',
+    'UI/UX Design',
+    'Machine Learning',
+    'Spanish Conversation',
+    'Digital Marketing',
+    'Data Science',
+    'Web Development',
+    'Mobile App Development',
+    'Graphic Design',
+    'Photography',
+    'Italian Cooking',
+    'Guitar Playing',
+    'Personal Training',
+    'Business Strategy',
+    'Public Speaking',
+    'Creative Writing'
+  ].filter(suggestion =>
+    suggestion.toLowerCase().includes(searchQuery)
+  ).slice(0, 8);
+
+  res.json({
+    success: true,
+    data: suggestions
+  });
+});
+
+// AI Assessment Endpoints
+
+// Generate skill assessment questions
+app.post('/api/ai/assessment/questions', (req, res) => {
+  const { skillId, currentLevel = 'BEGINNER', answeredQuestions = [] } = req.body;
+
+  const questions = aiService.generateAssessmentQuestions(skillId, currentLevel, answeredQuestions);
+
+  res.json({
+    success: true,
+    data: {
+      questions,
+      skillId,
+      currentLevel,
+      totalQuestions: questions.length
+    }
+  });
+});
+
+// Analyze user responses and generate profile
+app.post('/api/ai/assessment/analyze', (req, res) => {
+  const { userResponses, learningHistory = [] } = req.body;
+
+  const profile = aiService.analyzeUserProfile(userResponses, learningHistory);
+
+  res.json({
+    success: true,
+    data: {
+      profile,
+      insights: {
+        strengths: profile.learningStyle === 'VISUAL' ?
+          ['Excellent at processing visual information', 'Quick to understand diagrams and charts'] :
+          ['Strong analytical thinking', 'Good at systematic problem solving'],
+        recommendations: [
+          `Focus on ${profile.learningStyle.toLowerCase()} learning materials`,
+          `Best learning times: ${profile.optimalLearningTime.join(', ')}`,
+          `Estimated time to proficiency: ${profile.estimatedProficiencyTime} hours`
+        ]
+      }
+    }
+  });
+});
+
+// Find compatible teacher matches
+app.post('/api/ai/matching/teachers', (req, res) => {
+  const { learnerId, teacherIds, skillId } = req.body;
+
+  const matches = aiService.findCompatibleMatches(learnerId, teacherIds, skillId);
+
+  res.json({
+    success: true,
+    data: {
+      matches,
+      totalCandidates: teacherIds.length,
+      recommendedMatch: matches[0] // Best match
+    }
+  });
+});
+
+// Generate personalized learning path
+app.post('/api/ai/learning-path', (req, res) => {
+  const { skillId, userId, targetLevel = 'INTERMEDIATE' } = req.body;
+
+  const userProfile = aiService.getUserProfile(userId);
+  const learningPath = aiService.generateLearningPath(skillId, userProfile, targetLevel);
+
+  res.json({
+    success: true,
+    data: {
+      learningPath,
+      userProfile: {
+        learningStyle: userProfile.learningStyle,
+        personalityType: userProfile.personalityType,
+        estimatedDuration: learningPath.estimatedDuration
+      }
+    }
+  });
+});
+
+// Predict learning success rate
+app.post('/api/ai/predict/success', (req, res) => {
+  const { userId, skillId, sessionType = 'ONE_ON_ONE' } = req.body;
+
+  const successRate = aiService.predictSuccessRate(userId, skillId, sessionType);
+
+  res.json({
+    success: true,
+    data: {
+      successRate: Math.round(successRate * 100),
+      confidence: 'HIGH',
+      factors: {
+        userExperience: 'BEGINNER',
+        skillComplexity: 'MEDIUM',
+        sessionType: sessionType,
+        personalityMatch: 'GOOD'
+      },
+      recommendations: successRate > 0.8 ?
+        ['You have excellent potential for this skill!', 'Consider intensive sessions for faster progress'] :
+        ['Start with basics', 'Consider group sessions for support', 'Practice regularly for best results']
+    }
+  });
+});
+
+// Get AI insights for a skill
+app.get('/api/ai/insights/:skillId', (req, res) => {
+  const { skillId } = req.params;
+  const { userId = '1' } = req.query;
+
+  const userProfile = aiService.getUserProfile(userId);
+  const successRate = aiService.predictSuccessRate(userId, skillId);
+  const learningPath = aiService.generateLearningPath(skillId, userProfile);
+
+  res.json({
+    success: true,
+    data: {
+      personalizedInsights: {
+        learningStyle: userProfile.learningStyle,
+        estimatedDuration: `${Math.round(learningPath.estimatedDuration / 60)} hours`,
+        successProbability: `${Math.round(successRate * 100)}%`,
+        optimalSchedule: learningPath.dailySchedule,
+        recommendedPhases: learningPath.phases.slice(0, 3)
+      },
+      adaptiveRecommendations: learningPath.adaptiveContent,
+      milestones: learningPath.milestones
+    }
+  });
+});
+
+// Skill Swap Marketplace Endpoints
+
+// Get all swap offers with filtering
+app.get('/api/skill-swap/offers', (req, res) => {
+  const { skill, location, format, difficulty, userId = '1' } = req.query;
+
+  const filters = {};
+  if (skill) filters.skill = skill;
+  if (location) filters.location = location;
+  if (format) filters.format = format;
+  if (difficulty) filters.difficulty = difficulty;
+
+  const offers = swapService.getSwapOffers(filters);
+
+  res.json({
+    success: true,
+    data: {
+      offers,
+      total: offers.length,
+      filters: filters
+    }
+  });
+});
+
+// Create a new swap offer
+app.post('/api/skill-swap/offers', (req, res) => {
+  const { userId = '1', ...offerData } = req.body;
+
+  try {
+    const newOffer = swapService.createSwapOffer(userId, offerData);
+
+    res.json({
+      success: true,
+      data: newOffer,
+      message: 'Swap offer created successfully'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Accept a swap offer
+app.post('/api/skill-swap/offers/:offerId/accept', (req, res) => {
+  const { offerId } = req.params;
+  const { accepterId = '1' } = req.body;
+
+  try {
+    const swapMatch = swapService.acceptSwapOffer(offerId, accepterId);
+
+    res.json({
+      success: true,
+      data: swapMatch,
+      message: 'Swap offer accepted! You can now coordinate your learning sessions.'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Get user's credit balance
+app.get('/api/skill-swap/credits/:userId', (req, res) => {
+  const { userId } = req.params;
+
+  const credits = swapService.getUserCredits(userId);
+  const transactions = swapService.getUserTransactions(userId, 10);
+
+  res.json({
+    success: true,
+    data: {
+      balance: credits,
+      recentTransactions: transactions,
+      earnRate: 'Earn 100-150 credits per hour taught',
+      spendRate: 'Spend 80-120 credits per hour learned'
+    }
+  });
+});
+
+// Get transaction history
+app.get('/api/skill-swap/transactions/:userId', (req, res) => {
+  const { userId } = req.params;
+  const { limit = 20 } = req.query;
+
+  const transactions = swapService.getUserTransactions(userId, parseInt(limit));
+
+  res.json({
+    success: true,
+    data: transactions
+  });
+});
+
+// Calculate swap fairness
+app.post('/api/skill-swap/calculate-fairness', (req, res) => {
+  const { offeredSkill, offeredHours, requestedSkill, requestedHours } = req.body;
+
+  const fairness = swapService.calculateSwapFairness(
+    offeredSkill, offeredHours, requestedSkill, requestedHours
+  );
+
+  res.json({
+    success: true,
+    data: fairness
+  });
+});
+
+// Get personalized swap recommendations
+app.get('/api/skill-swap/recommendations/:userId', (req, res) => {
+  const { userId } = req.params;
+
+  // Mock user skills and interests - in real app, get from user profile
+  const userSkills = ['React Development', 'JavaScript Programming'];
+  const interestedSkills = ['UI/UX Design', 'Spanish Conversation'];
+
+  const recommendations = swapService.recommendSwapMatches(userId, userSkills, interestedSkills);
+
+  res.json({
+    success: true,
+    data: {
+      recommendations,
+      userSkills,
+      interestedSkills,
+      total: recommendations.length
+    }
+  });
+});
+
+// Get marketplace statistics
+app.get('/api/skill-swap/stats', (req, res) => {
+  const stats = swapService.getMarketplaceStats();
+
+  res.json({
+    success: true,
+    data: {
+      ...stats,
+      growth: {
+        weeklyNewOffers: 15,
+        weeklyCompletedSwaps: 8,
+        weeklyNewUsers: 23
+      },
+      trends: {
+        hotSkills: ['React Development', 'Python Programming', 'UI/UX Design'],
+        emergingSkills: ['Machine Learning', 'Blockchain Development', 'Data Science']
+      }
+    }
+  });
+});
+
+// Award credits (for completing teaching session)
+app.post('/api/skill-swap/credits/award', (req, res) => {
+  const { userId, amount, reason } = req.body;
+
+  try {
+    const transaction = swapService.awardCredits(userId, amount, reason);
+
+    res.json({
+      success: true,
+      data: transaction,
+      message: `${amount} credits awarded!`
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Deduct credits (for learning session)
+app.post('/api/skill-swap/credits/deduct', (req, res) => {
+  const { userId, amount, reason } = req.body;
+
+  try {
+    const transaction = swapService.deductCredits(userId, amount, reason);
+
+    res.json({
+      success: true,
+      data: transaction,
+      message: `${amount} credits deducted`
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Get skill credit values
+app.get('/api/skill-swap/skill-values', (req, res) => {
+  const skillValues = {
+    'React Development': swapService.getSkillCreditValue('React Development'),
+    'Python Programming': swapService.getSkillCreditValue('Python Programming'),
+    'UI/UX Design': swapService.getSkillCreditValue('UI/UX Design'),
+    'Spanish Conversation': swapService.getSkillCreditValue('Spanish Conversation'),
+    'Machine Learning': swapService.getSkillCreditValue('Machine Learning'),
+    'Guitar Playing': swapService.getSkillCreditValue('Guitar Playing'),
+    'Italian Cooking': swapService.getSkillCreditValue('Italian Cooking'),
+    'Digital Marketing': swapService.getSkillCreditValue('Digital Marketing')
+  };
+
+  res.json({
+    success: true,
+    data: {
+      skillValues,
+      note: 'Values are per hour and may vary based on demand and complexity'
+    }
+  });
+});
+
+// === SOCIAL LEARNING ENDPOINTS ===
+
+// Study Rooms
+app.get('/api/social/study-rooms', (req, res) => {
+  const { subject, difficulty, status, hasSpace } = req.query;
+
+  const filters = {};
+  if (subject) filters.subject = subject;
+  if (difficulty) filters.difficulty = difficulty;
+  if (status) filters.status = status;
+  if (hasSpace === 'true') filters.hasSpace = true;
+
+  const rooms = socialService.getStudyRooms(filters);
+
+  res.json({
+    success: true,
+    data: rooms
+  });
+});
+
+app.post('/api/social/study-rooms', (req, res) => {
+  const { hostId = '1', ...roomData } = req.body;
+
+  try {
+    const room = socialService.createStudyRoom(hostId, roomData);
+
+    res.json({
+      success: true,
+      data: room,
+      message: 'Study room created successfully'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+app.post('/api/social/study-rooms/:roomId/join', (req, res) => {
+  const { roomId } = req.params;
+  const { userId = '1', password } = req.body;
+
+  try {
+    const room = socialService.joinStudyRoom(roomId, userId, password);
+
+    res.json({
+      success: true,
+      data: room,
+      message: 'Successfully joined study room'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+app.post('/api/social/study-rooms/:roomId/leave', (req, res) => {
+  const { roomId } = req.params;
+  const { userId = '1' } = req.body;
+
+  try {
+    const room = socialService.leaveStudyRoom(roomId, userId);
+
+    res.json({
+      success: true,
+      data: room,
+      message: 'Successfully left study room'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Learning Challenges
+app.get('/api/social/challenges', (req, res) => {
+  const { category, difficulty, type, status } = req.query;
+
+  const filters = {};
+  if (category) filters.category = category;
+  if (difficulty) filters.difficulty = difficulty;
+  if (type) filters.type = type;
+  if (status) filters.status = status;
+
+  const challenges = socialService.getChallenges(filters);
+
+  res.json({
+    success: true,
+    data: challenges
+  });
+});
+
+app.post('/api/social/challenges', (req, res) => {
+  const { creatorId = '1', ...challengeData } = req.body;
+
+  try {
+    const challenge = socialService.createChallenge(creatorId, challengeData);
+
+    res.json({
+      success: true,
+      data: challenge,
+      message: 'Challenge created successfully'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+app.post('/api/social/challenges/:challengeId/join', (req, res) => {
+  const { challengeId } = req.params;
+  const { userId = '1' } = req.body;
+
+  try {
+    const challenge = socialService.joinChallenge(challengeId, userId);
+
+    res.json({
+      success: true,
+      data: challenge,
+      message: 'Successfully joined challenge'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+app.put('/api/social/challenges/:challengeId/progress', (req, res) => {
+  const { challengeId } = req.params;
+  const { userId = '1', ...progressData } = req.body;
+
+  try {
+    const challenge = socialService.updateChallengeProgress(challengeId, userId, progressData);
+
+    res.json({
+      success: true,
+      data: challenge,
+      message: 'Progress updated successfully'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// User Analytics
+app.get('/api/social/analytics/:userId', (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const analytics = socialService.getUserLearningAnalytics(userId);
+
+    res.json({
+      success: true,
+      data: analytics
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// === COLLABORATION ENDPOINTS ===
+
+// Workspaces
+app.post('/api/collaboration/workspaces', (req, res) => {
+  const { ownerId = '1', ...workspaceData } = req.body;
+
+  try {
+    const workspace = collaborationService.createWorkspace(ownerId, workspaceData);
+
+    res.json({
+      success: true,
+      data: workspace,
+      message: 'Workspace created successfully'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+app.get('/api/collaboration/workspaces/:workspaceId', (req, res) => {
+  const { workspaceId } = req.params;
+
+  try {
+    const workspace = collaborationService.getWorkspace(workspaceId);
+
+    if (!workspace) {
+      return res.status(404).json({
+        success: false,
+        message: 'Workspace not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: workspace
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+app.post('/api/collaboration/workspaces/:workspaceId/join', (req, res) => {
+  const { workspaceId } = req.params;
+  const { userId = '1', role = 'VIEWER' } = req.body;
+
+  try {
+    const workspace = collaborationService.joinWorkspace(workspaceId, userId, role);
+
+    res.json({
+      success: true,
+      data: workspace,
+      message: 'Successfully joined workspace'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+app.post('/api/collaboration/workspaces/:workspaceId/leave', (req, res) => {
+  const { workspaceId } = req.params;
+  const { userId = '1' } = req.body;
+
+  try {
+    const workspace = collaborationService.leaveWorkspace(workspaceId, userId);
+
+    res.json({
+      success: true,
+      data: workspace,
+      message: 'Successfully left workspace'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Files
+app.post('/api/collaboration/workspaces/:workspaceId/files', (req, res) => {
+  const { workspaceId } = req.params;
+  const { userId = '1', ...fileData } = req.body;
+
+  try {
+    const file = collaborationService.createFile(workspaceId, userId, fileData);
+
+    res.json({
+      success: true,
+      data: file,
+      message: 'File created successfully'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+app.put('/api/collaboration/workspaces/:workspaceId/files/:fileId', (req, res) => {
+  const { workspaceId, fileId } = req.params;
+  const { userId = '1', content } = req.body;
+
+  try {
+    const file = collaborationService.updateFile(workspaceId, fileId, userId, content);
+
+    // Broadcast file update
+    collaborationService.broadcastToWorkspace(workspaceId, 'file_update', {
+      fileId,
+      content,
+      modifiedBy: userId
+    }, userId);
+
+    res.json({
+      success: true,
+      data: file,
+      message: 'File updated successfully'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+app.post('/api/collaboration/workspaces/:workspaceId/files/:fileId/lock', (req, res) => {
+  const { workspaceId, fileId } = req.params;
+  const { userId = '1' } = req.body;
+
+  try {
+    const file = collaborationService.lockFile(workspaceId, fileId, userId);
+
+    // Broadcast lock status
+    collaborationService.broadcastToWorkspace(workspaceId, 'file_lock', {
+      fileId,
+      locked: file.locked,
+      lockedBy: file.lockedBy
+    }, userId);
+
+    res.json({
+      success: true,
+      data: file,
+      message: file.locked ? 'File locked successfully' : 'File unlocked successfully'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Code Sessions
+app.post('/api/collaboration/code-sessions', (req, res) => {
+  const { hostId = '1', ...sessionData } = req.body;
+
+  try {
+    const session = collaborationService.createCodeSession(hostId, sessionData);
+
+    res.json({
+      success: true,
+      data: session,
+      message: 'Code session created successfully'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+app.get('/api/collaboration/code-sessions/:sessionId', (req, res) => {
+  const { sessionId } = req.params;
+
+  try {
+    const session = collaborationService.codeSessions.get(sessionId);
+
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        message: 'Code session not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: session
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+app.post('/api/collaboration/code-sessions/:sessionId/join', (req, res) => {
+  const { sessionId } = req.params;
+  const { userId = '1' } = req.body;
+
+  try {
+    const session = collaborationService.joinCodeSession(sessionId, userId);
+
+    // Broadcast user joined
+    collaborationService.broadcastToCodeSession(sessionId, 'user_joined', {
+      userId,
+      userName: collaborationService.getUserName(userId)
+    }, userId);
+
+    res.json({
+      success: true,
+      data: session,
+      message: 'Successfully joined code session'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+app.put('/api/collaboration/code-sessions/:sessionId', (req, res) => {
+  const { sessionId } = req.params;
+  const { userId = '1', ...updates } = req.body;
+
+  try {
+    const session = collaborationService.updateCodeSession(sessionId, userId, updates);
+
+    // Broadcast code changes
+    if (updates.code !== undefined) {
+      collaborationService.broadcastToCodeSession(sessionId, 'code_update', {
+        code: updates.code,
+        updatedBy: userId
+      }, userId);
+    }
+
+    // Broadcast cursor/selection changes
+    if (updates.cursor || updates.selection !== undefined) {
+      collaborationService.broadcastToCodeSession(sessionId, 'cursor_update', {
+        userId,
+        cursor: updates.cursor,
+        selection: updates.selection,
+        isTyping: updates.isTyping
+      }, userId);
+    }
+
+    res.json({
+      success: true,
+      data: session
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+app.post('/api/collaboration/code-sessions/:sessionId/execute', (req, res) => {
+  const { sessionId } = req.params;
+  const { userId = '1', code, language } = req.body;
+
+  try {
+    const result = collaborationService.executeCode(sessionId, userId, code, language);
+
+    // Broadcast execution result
+    collaborationService.broadcastToCodeSession(sessionId, 'code_executed', {
+      result,
+      executedBy: userId
+    }, userId);
+
+    res.json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Analytics
+app.get('/api/collaboration/workspaces/:workspaceId/analytics', (req, res) => {
+  const { workspaceId } = req.params;
+
+  try {
+    const analytics = collaborationService.getWorkspaceAnalytics(workspaceId);
+
+    res.json({
+      success: true,
+      data: analytics
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// === COMMUNITY ENDPOINTS ===
+
+// Community Posts
+app.get('/api/community/posts', (req, res) => {
+  const { category, search, authorId } = req.query;
+
+  const filters = {};
+  if (category) filters.category = category;
+  if (search) filters.search = search;
+  if (authorId) filters.authorId = authorId;
+
+  const posts = communityService.getPosts(filters);
+
+  res.json({
+    success: true,
+    data: posts
+  });
+});
+
+app.post('/api/community/posts', (req, res) => {
+  const { authorId = '1', ...postData } = req.body;
+
+  try {
+    const post = communityService.createPost(authorId, postData);
+
+    res.json({
+      success: true,
+      data: post,
+      message: 'Post created successfully'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+app.post('/api/community/posts/:postId/like', (req, res) => {
+  const { postId } = req.params;
+  const { userId = '1' } = req.body;
+
+  try {
+    const post = communityService.likePost(postId, userId);
+
+    res.json({
+      success: true,
+      data: post,
+      message: 'Post liked successfully'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+app.post('/api/community/posts/:postId/comment', (req, res) => {
+  const { postId } = req.params;
+  const { userId = '1', comment } = req.body;
+
+  try {
+    const post = communityService.commentOnPost(postId, userId, comment);
+
+    res.json({
+      success: true,
+      data: post,
+      message: 'Comment added successfully'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Community Members
+app.get('/api/community/members', (req, res) => {
+  const { search, skill, isMentor } = req.query;
+
+  const filters = {};
+  if (search) filters.search = search;
+  if (skill) filters.skill = skill;
+  if (isMentor !== undefined) filters.isMentor = isMentor === 'true';
+
+  const members = communityService.getMembers(filters);
+
+  res.json({
+    success: true,
+    data: members
+  });
+});
+
+// Peer Verification
+app.get('/api/community/verification/requests', (req, res) => {
+  const { status, skillCategory, userId } = req.query;
+
+  const filters = {};
+  if (status) filters.status = status;
+  if (skillCategory) filters.skillCategory = skillCategory;
+  if (userId) filters.userId = userId;
+
+  const requests = communityService.getVerificationRequests(filters);
+
+  res.json({
+    success: true,
+    data: requests
+  });
+});
+
+app.post('/api/community/verification/requests', (req, res) => {
+  const { userId = '1', ...requestData } = req.body;
+
+  try {
+    const request = communityService.submitVerificationRequest(userId, requestData);
+
+    res.json({
+      success: true,
+      data: request,
+      message: 'Verification request submitted successfully'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+app.post('/api/community/verification/requests/:requestId/review', (req, res) => {
+  const { requestId } = req.params;
+  const { reviewerId = '1', ...reviewData } = req.body;
+
+  try {
+    const result = communityService.submitVerificationReview(requestId, reviewerId, reviewData);
+
+    res.json({
+      success: true,
+      data: result,
+      message: 'Review submitted successfully'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Mentorship
+app.get('/api/community/mentorship', (req, res) => {
+  const { skillArea, format, maxPrice, availableOnly } = req.query;
+
+  const filters = {};
+  if (skillArea) filters.skillArea = skillArea;
+  if (format) filters.format = format;
+  if (maxPrice) filters.maxPrice = parseInt(maxPrice);
+  if (availableOnly === 'true') filters.availableOnly = true;
+
+  const opportunities = communityService.getMentorshipOpportunities(filters);
+
+  res.json({
+    success: true,
+    data: opportunities
+  });
+});
+
+app.post('/api/community/mentorship', (req, res) => {
+  const { mentorId = '1', ...opportunityData } = req.body;
+
+  try {
+    const opportunity = communityService.createMentorshipOpportunity(mentorId, opportunityData);
+
+    res.json({
+      success: true,
+      data: opportunity,
+      message: 'Mentorship opportunity created successfully'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+app.post('/api/community/mentorship/:opportunityId/apply', (req, res) => {
+  const { opportunityId } = req.params;
+  const { menteeId = '1' } = req.body;
+
+  try {
+    const opportunity = communityService.applyForMentorship(opportunityId, menteeId);
+
+    res.json({
+      success: true,
+      data: opportunity,
+      message: 'Applied for mentorship successfully'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Community Stats
+app.get('/api/community/stats', (req, res) => {
+  try {
+    const stats = communityService.getCommunityStats();
+
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// User Reputation
+app.get('/api/community/reputation/:userId', (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const reputation = communityService.getUserReputation(userId);
+
+    res.json({
+      success: true,
+      data: { userId, reputation }
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Enhanced Authentication Endpoints
+app.post('/api/auth/login', mockLogin);
+app.get('/api/auth/me', protect, getCurrentUser);
+
+// Example protected route
+app.get('/api/protected', protect, (req, res) => {
+  res.json({
+    success: true,
+    message: 'This is a protected route',
+    user: req.user
+  });
+});
+
+// Error handling middleware (must be last)
+app.use(errorHandler);
+
+// Handle 404 routes
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.originalUrl} not found`
+  });
+});
+
+// Cleanup inactive sessions every hour
+setInterval(() => {
+  collaborationService.cleanupInactiveSessions();
+}, 60 * 60 * 1000);
+
 app.listen(port, () => {
   console.log(`🚀 Backend server running at http://localhost:${port}`);
   console.log(`📋 Health check: http://localhost:${port}/health`);
+  console.log(`🔐 Auth: http://localhost:${port}/api/auth/*`);
+  console.log(`🎓 AI Assessment: http://localhost:${port}/api/ai/assessment/*`);
+  console.log(`🔄 Skill Swap: http://localhost:${port}/api/skill-swap/*`);
+  console.log(`👥 Social Learning: http://localhost:${port}/api/social/*`);
+  console.log(`🤝 Collaboration: http://localhost:${port}/api/collaboration/*`);
+  console.log(`🌟 Community: http://localhost:${port}/api/community/*`);
+  console.log(`🔍 Search: http://localhost:${port}/api/search*`);
 });
