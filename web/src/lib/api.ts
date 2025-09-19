@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { User, Skill, Session, Match } from '@skill-circle/shared';
+import { handleApiError, showErrorToast, withErrorHandling, retryWithExponentialBackoff } from './error-handling';
 
 const isDevelopment = false; // Force real API calls for testing integration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -11,7 +12,44 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // 10 second timeout
 });
+
+// Request interceptor
+api.interceptors.request.use(
+  (config) => {
+    // Add auth token if available
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    const apiError = handleApiError(error);
+
+    // Handle specific error cases
+    if (apiError.status === 401) {
+      // Clear auth token and redirect to login
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('authToken');
+        window.location.href = '/auth';
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 // Mock data for development when backend is not available
 const mockUsers: User[] = [
