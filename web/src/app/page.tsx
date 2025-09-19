@@ -147,11 +147,11 @@ export default function HomePage() {
           <div className="grid md:grid-cols-4 gap-6">
             {[
               { name: 'Technology', icon: '💻', count: '850+ skills', link: '/explore/technology' },
-              { name: 'Cooking', icon: '🍳', count: '250+ skills', link: '/explore' },
+              { name: 'Medical', icon: '🏥', count: '420+ skills', link: '/explore' },
+              { name: 'Engineering', icon: '⚙️', count: '680+ skills', link: '/explore' },
+              { name: 'Fashion', icon: '👗', count: '280+ skills', link: '/explore' },
               { name: 'Languages', icon: '🗣️', count: '320+ languages', link: '/explore' },
               { name: 'Music', icon: '🎵', count: '180+ instruments', link: '/explore' },
-              { name: 'Arts & Crafts', icon: '🎨', count: '160+ skills', link: '/explore' },
-              { name: 'Sports', icon: '⚽', count: '190+ activities', link: '/explore' },
               { name: 'Business', icon: '💼', count: '380+ skills', link: '/explore' },
               { name: 'Wellness', icon: '🧘', count: '190+ practices', link: '/explore' },
             ].map((category) => (

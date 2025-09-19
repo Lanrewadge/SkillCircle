@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import InteractiveRoadmap from '@/components/roadmap/InteractiveRoadmap'
+import { roadmapDatabase } from '@/data/roadmaps'
 import {
   Star,
   Users,
@@ -455,85 +457,38 @@ export default function SkillDetailPage() {
 
                 {/* Roadmap Tab */}
                 <TabsContent value="roadmap" className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Target className="w-5 h-5 text-blue-500" />
-                        Learning Roadmap
-                      </CardTitle>
-                      <CardDescription>
-                        Follow this structured path to master React development
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        {skill.roadmap.map((step, idx) => (
-                          <div key={step.id} className="relative">
-                            {idx < skill.roadmap.length - 1 && (
-                              <div className="absolute left-6 top-14 w-px h-16 bg-border"></div>
-                            )}
-                            <div className="flex gap-4">
-                              <div className="flex-shrink-0">
-                                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                                  step.completed
-                                    ? 'bg-green-500 text-white'
-                                    : 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300'
-                                }`}>
-                                  {step.completed ? (
-                                    <CheckCircle className="w-6 h-6" />
-                                  ) : (
-                                    <span className="font-bold">{idx + 1}</span>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex-1">
-                                <Card className="hover:shadow-md transition-shadow">
-                                  <CardHeader className="pb-3">
-                                    <div className="flex justify-between items-start">
-                                      <div>
-                                        <CardTitle className="text-lg">{step.title}</CardTitle>
-                                        <CardDescription>{step.description}</CardDescription>
-                                      </div>
-                                      <div className="text-right text-sm text-muted-foreground">
-                                        <div>{step.duration}</div>
-                                        <div>{step.lessons} lessons</div>
-                                      </div>
-                                    </div>
-                                  </CardHeader>
-                                  <CardContent>
-                                    <div className="flex flex-wrap gap-1 mb-3">
-                                      {step.topics.map((topic, topicIdx) => (
-                                        <Badge key={topicIdx} variant="secondary" className="text-xs">
-                                          {topic}
-                                        </Badge>
-                                      ))}
-                                    </div>
-                                    <Button
-                                      size="sm"
-                                      variant={step.completed ? "secondary" : "default"}
-                                      className="w-full"
-                                    >
-                                      {step.completed ? (
-                                        <>
-                                          <CheckCircle className="w-4 h-4 mr-2" />
-                                          Completed
-                                        </>
-                                      ) : (
-                                        <>
-                                          <Play className="w-4 h-4 mr-2" />
-                                          Start Learning
-                                        </>
-                                      )}
-                                    </Button>
-                                  </CardContent>
-                                </Card>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
+                  {(() => {
+                    // Map skillId to roadmap type
+                    let roadmapType = 'devops'
+                    if (skillId === 1) roadmapType = 'react'
+                    else if (skill.subcategory === 'Web Development') roadmapType = 'react'
+                    else if (skill.category.includes('Medical')) roadmapType = 'nursing'
+                    else if (skill.category.includes('Engineering')) roadmapType = 'mechanical-engineering'
+                    else if (skill.category.includes('Fashion')) roadmapType = 'fashion-design'
+
+                    const roadmapData = roadmapDatabase[roadmapType as keyof typeof roadmapDatabase]
+
+                    if (roadmapData) {
+                      return (
+                        <InteractiveRoadmap
+                          roadmapId={roadmapType}
+                          roadmapData={roadmapData}
+                        />
+                      )
+                    } else {
+                      return (
+                        <Card>
+                          <CardContent className="p-8 text-center">
+                            <Target className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                            <h3 className="font-medium text-lg mb-2">Interactive Roadmap Coming Soon</h3>
+                            <p className="text-muted-foreground">
+                              We're working on creating an interactive roadmap for this skill. Check back soon!
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )
+                    }
+                  })()}
                 </TabsContent>
 
                 {/* Study Groups Tab */}

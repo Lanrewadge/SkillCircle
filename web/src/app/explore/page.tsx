@@ -56,6 +56,61 @@ const skillCategories = [
     ]
   },
   {
+    id: 'medical',
+    name: 'Medical & Healthcare',
+    icon: <Heart className="w-8 h-8" />,
+    description: 'Healthcare skills for medical professionals and caregivers',
+    color: 'bg-red-500',
+    skillCount: 420,
+    subcategories: [
+      { name: 'Nursing', skills: 85, trending: true },
+      { name: 'Medicine', skills: 120, trending: true },
+      { name: 'Physical Therapy', skills: 45, trending: false },
+      { name: 'Medical Technology', skills: 55, trending: true },
+      { name: 'Healthcare Administration', skills: 40, trending: false },
+      { name: 'Mental Health', skills: 35, trending: true },
+      { name: 'Pharmacy', skills: 25, trending: false },
+      { name: 'Medical Research', skills: 15, trending: true }
+    ]
+  },
+  {
+    id: 'engineering',
+    name: 'Engineering & Manufacturing',
+    icon: <Laptop className="w-8 h-8" />,
+    description: 'Engineering disciplines and manufacturing expertise',
+    color: 'bg-gray-600',
+    skillCount: 680,
+    subcategories: [
+      { name: 'Mechanical Engineering', skills: 120, trending: false },
+      { name: 'Electrical Engineering', skills: 95, trending: true },
+      { name: 'Civil Engineering', skills: 85, trending: false },
+      { name: 'Chemical Engineering', skills: 70, trending: false },
+      { name: 'Software Engineering', skills: 150, trending: true },
+      { name: 'Industrial Engineering', skills: 60, trending: false },
+      { name: 'Aerospace Engineering', skills: 45, trending: true },
+      { name: 'Environmental Engineering', skills: 35, trending: true },
+      { name: 'Biomedical Engineering', skills: 20, trending: true }
+    ]
+  },
+  {
+    id: 'fashion',
+    name: 'Fashion & Textiles',
+    icon: <Camera className="w-8 h-8" />,
+    description: 'Fashion design, styling, and textile arts',
+    color: 'bg-pink-500',
+    skillCount: 280,
+    subcategories: [
+      { name: 'Fashion Design', skills: 65, trending: true },
+      { name: 'Fashion Styling', skills: 45, trending: true },
+      { name: 'Pattern Making', skills: 35, trending: false },
+      { name: 'Textile Design', skills: 40, trending: false },
+      { name: 'Fashion Business', skills: 30, trending: true },
+      { name: 'Sustainable Fashion', skills: 25, trending: true },
+      { name: 'Fashion Photography', skills: 20, trending: false },
+      { name: 'Fashion Marketing', skills: 20, trending: true }
+    ]
+  },
+  {
     id: 'design',
     name: 'Design & Creative Arts',
     icon: <Palette className="w-8 h-8" />,
