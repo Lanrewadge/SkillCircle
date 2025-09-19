@@ -146,22 +146,24 @@ export default function HomePage() {
 
           <div className="grid md:grid-cols-4 gap-6">
             {[
-              { name: 'Technology', icon: '💻', count: '500+ skills' },
-              { name: 'Cooking', icon: '🍳', count: '300+ skills' },
-              { name: 'Languages', icon: '🗣️', count: '50+ languages' },
-              { name: 'Music', icon: '🎵', count: '100+ instruments' },
-              { name: 'Arts & Crafts', icon: '🎨', count: '200+ skills' },
-              { name: 'Sports', icon: '⚽', count: '150+ activities' },
-              { name: 'Business', icon: '💼', count: '250+ skills' },
-              { name: 'Wellness', icon: '🧘', count: '100+ practices' },
+              { name: 'Technology', icon: '💻', count: '850+ skills', link: '/explore/technology' },
+              { name: 'Cooking', icon: '🍳', count: '250+ skills', link: '/explore' },
+              { name: 'Languages', icon: '🗣️', count: '320+ languages', link: '/explore' },
+              { name: 'Music', icon: '🎵', count: '180+ instruments', link: '/explore' },
+              { name: 'Arts & Crafts', icon: '🎨', count: '160+ skills', link: '/explore' },
+              { name: 'Sports', icon: '⚽', count: '190+ activities', link: '/explore' },
+              { name: 'Business', icon: '💼', count: '380+ skills', link: '/explore' },
+              { name: 'Wellness', icon: '🧘', count: '190+ practices', link: '/explore' },
             ].map((category) => (
-              <Card key={category.name} className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardContent className="text-center p-6">
-                  <div className="text-4xl mb-3">{category.icon}</div>
-                  <h3 className="font-semibold text-foreground mb-1">{category.name}</h3>
-                  <p className="text-sm text-muted-foreground">{category.count}</p>
-                </CardContent>
-              </Card>
+              <Link key={category.name} href={category.link}>
+                <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group">
+                  <CardContent className="text-center p-6">
+                    <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">{category.icon}</div>
+                    <h3 className="font-semibold text-foreground mb-1 group-hover:text-blue-600 transition-colors">{category.name}</h3>
+                    <p className="text-sm text-muted-foreground">{category.count}</p>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         </div>
