@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { User, Skill, Session, Match } from '@skill-circle/shared';
 
-const isDevelopment = process.env.NODE_ENV === 'development';
+const isDevelopment = false; // Force real API calls for testing integration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 // Create axios instance
@@ -485,12 +485,17 @@ export const authApi = {
 };
 
 export const skillsApi = {
-  getAll: async () => {
+  getAll: async (params?: { search?: string; category?: string; difficulty?: string; page?: number; limit?: number }) => {
     try {
-      if (isDevelopment) {
-        return await mockSkillsApi.getAll();
-      }
-      const response = await api.get('/skills');
+      const queryParams = new URLSearchParams();
+      if (params?.search) queryParams.append('search', params.search);
+      if (params?.category) queryParams.append('category', params.category);
+      if (params?.difficulty) queryParams.append('difficulty', params.difficulty);
+      if (params?.page) queryParams.append('page', params.page.toString());
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+
+      const url = `/v1/skills${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const response = await api.get(url);
       return response.data;
     } catch (error) {
       if (isDevelopment) {
@@ -502,15 +507,33 @@ export const skillsApi = {
 
   search: async (query: string) => {
     try {
-      if (isDevelopment) {
-        return await mockSkillsApi.search(query);
-      }
-      const response = await api.get(`/skills/search?q=${encodeURIComponent(query)}`);
+      const response = await api.get(`/v1/skills?search=${encodeURIComponent(query)}`);
       return response.data;
     } catch (error) {
       if (isDevelopment) {
         return await mockSkillsApi.search(query);
       }
+      throw error;
+    }
+  },
+
+  getById: async (id: string) => {
+    try {
+      const response = await api.get(`/v1/skills/${id}`);
+      return response.data;
+    } catch (error) {
+      if (isDevelopment) {
+        return await mockSkillsApi.getAll();
+      }
+      throw error;
+    }
+  },
+
+  getRoadmap: async (id: string) => {
+    try {
+      const response = await api.get(`/v1/skills/${id}/roadmap`);
+      return response.data;
+    } catch (error) {
       throw error;
     }
   },
@@ -551,10 +574,7 @@ export const teachersApi = {
 export const categoriesApi = {
   getAll: async () => {
     try {
-      if (isDevelopment) {
-        return await mockCategoriesApi.getAll();
-      }
-      const response = await api.get('/categories');
+      const response = await api.get('/v1/skills/categories');
       return response.data;
     } catch (error) {
       if (isDevelopment) {
