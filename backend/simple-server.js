@@ -1,8 +1,11 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const http = require('http');
+const { Server } = require('socket.io');
 
 // Import services
 const AIAssessmentService = require('./src/services/aiAssessmentService');
@@ -16,7 +19,15 @@ const errorHandler = require('./src/middleware/errorHandler');
 const { protect, optionalAuth, mockLogin, getCurrentUser } = require('./src/middleware/auth');
 
 const app = express();
-const port = 3002;
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: ["http://localhost:3000", "http://localhost:3001"],
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
+const port = process.env.PORT || 3001;
 
 // Initialize services
 const aiService = new AIAssessmentService();
@@ -60,6 +71,18 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Backend server is running' });
 });
+
+// Import and use payment routes
+const paymentRoutes = require('./routes/payments');
+app.use('/api/v1/payments', paymentRoutes);
+
+// Import and use assessment routes
+const assessmentRoutes = require('./routes/assessments');
+app.use('/api/v1/assessments', assessmentRoutes);
+
+// Import and use auth routes
+const authRoutes = require('./routes/auth');
+app.use('/api/v1/auth', authRoutes);
 
 // Mock API endpoints for the frontend
 app.get('/api/auth/me', (req, res) => {
@@ -2961,7 +2984,261 @@ setInterval(() => {
   collaborationService.cleanupInactiveSessions();
 }, 60 * 60 * 1000);
 
-app.listen(port, () => {
+// WebSocket connection handling
+const activeUsers = new Map();
+const conversationRooms = new Map();
+
+io.on('connection', (socket) => {
+  console.log(`User connected: ${socket.id}`);
+
+  // Handle user authentication
+  socket.on('authenticate', (userId) => {
+    socket.userId = userId;
+    activeUsers.set(userId, {
+      socketId: socket.id,
+      lastSeen: new Date(),
+      isOnline: true
+    });
+
+    // Broadcast online users update
+    io.emit('online_users_updated', Array.from(activeUsers.keys()));
+  });
+
+  // Handle joining conversation rooms
+  socket.on('join_conversation', (conversationId) => {
+    socket.join(conversationId);
+
+    if (!conversationRooms.has(conversationId)) {
+      conversationRooms.set(conversationId, new Set());
+    }
+    conversationRooms.get(conversationId).add(socket.userId);
+
+    console.log(`User ${socket.userId} joined conversation ${conversationId}`);
+  });
+
+  // Handle leaving conversation rooms
+  socket.on('leave_conversation', (conversationId) => {
+    socket.leave(conversationId);
+
+    if (conversationRooms.has(conversationId)) {
+      conversationRooms.get(conversationId).delete(socket.userId);
+    }
+
+    console.log(`User ${socket.userId} left conversation ${conversationId}`);
+  });
+
+  // Handle sending messages
+  socket.on('send_message', (data) => {
+    const { conversationId, message, timestamp } = data;
+
+    const messageData = {
+      id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      senderId: socket.userId,
+      content: message,
+      timestamp: timestamp || new Date().toISOString(),
+      type: 'text',
+      status: 'sent'
+    };
+
+    // Broadcast message to all users in the conversation
+    socket.to(conversationId).emit('message_received', messageData);
+
+    console.log(`Message sent in conversation ${conversationId}:`, messageData);
+  });
+
+  // Handle typing indicators
+  socket.on('typing_start', (conversationId) => {
+    socket.to(conversationId).emit('user_typing', {
+      userId: socket.userId,
+      conversationId
+    });
+  });
+
+  socket.on('typing_stop', (conversationId) => {
+    socket.to(conversationId).emit('user_stopped_typing', {
+      userId: socket.userId,
+      conversationId
+    });
+  });
+
+  // Handle video call signals
+  socket.on('call_user', (data) => {
+    const { targetUserId, offer, conversationId } = data;
+    const targetUser = activeUsers.get(targetUserId);
+
+    if (targetUser) {
+      io.to(targetUser.socketId).emit('incoming_call', {
+        from: socket.userId,
+        offer,
+        conversationId
+      });
+    }
+  });
+
+  socket.on('answer_call', (data) => {
+    const { targetUserId, answer } = data;
+    const targetUser = activeUsers.get(targetUserId);
+
+    if (targetUser) {
+      io.to(targetUser.socketId).emit('call_answered', {
+        from: socket.userId,
+        answer
+      });
+    }
+  });
+
+  socket.on('ice_candidate', (data) => {
+    const { targetUserId, candidate } = data;
+    const targetUser = activeUsers.get(targetUserId);
+
+    if (targetUser) {
+      io.to(targetUser.socketId).emit('ice_candidate', {
+        from: socket.userId,
+        candidate
+      });
+    }
+  });
+
+  socket.on('end_call', (data) => {
+    const { targetUserId } = data;
+    const targetUser = activeUsers.get(targetUserId);
+
+    if (targetUser) {
+      io.to(targetUser.socketId).emit('call_ended', {
+        from: socket.userId
+      });
+    }
+  });
+
+  // WebRTC Video Call Signaling
+  const videoCallRooms = new Map();
+
+  socket.on('join-video-call', (data) => {
+    const { sessionId, userName, isTeacher } = data;
+    socket.join(sessionId);
+
+    if (!videoCallRooms.has(sessionId)) {
+      videoCallRooms.set(sessionId, new Set());
+    }
+
+    const room = videoCallRooms.get(sessionId);
+    room.add({
+      socketId: socket.id,
+      userId: socket.userId,
+      userName,
+      isTeacher
+    });
+
+    // Notify others in the room
+    socket.to(sessionId).emit('user-joined-video-call', {
+      userId: socket.userId,
+      userName,
+      isTeacher
+    });
+
+    console.log(`User ${userName} joined video call ${sessionId}`);
+  });
+
+  socket.on('leave-video-call', (data) => {
+    const { sessionId } = data;
+    socket.leave(sessionId);
+
+    if (videoCallRooms.has(sessionId)) {
+      const room = videoCallRooms.get(sessionId);
+      room.forEach(participant => {
+        if (participant.socketId === socket.id) {
+          room.delete(participant);
+          socket.to(sessionId).emit('user-left-video-call', {
+            userId: participant.userId,
+            userName: participant.userName
+          });
+        }
+      });
+
+      if (room.size === 0) {
+        videoCallRooms.delete(sessionId);
+      }
+    }
+  });
+
+  // WebRTC Signaling
+  socket.on('webrtc-offer', (data) => {
+    const { sessionId, offer } = data;
+    socket.to(sessionId).emit('webrtc-offer', {
+      offer,
+      from: socket.userId
+    });
+    console.log(`WebRTC offer sent in session ${sessionId}`);
+  });
+
+  socket.on('webrtc-answer', (data) => {
+    const { sessionId, answer, to } = data;
+    socket.to(sessionId).emit('webrtc-answer', {
+      answer,
+      from: socket.userId
+    });
+    console.log(`WebRTC answer sent in session ${sessionId}`);
+  });
+
+  socket.on('webrtc-ice-candidate', (data) => {
+    const { sessionId, candidate } = data;
+    socket.to(sessionId).emit('webrtc-ice-candidate', {
+      candidate,
+      from: socket.userId
+    });
+  });
+
+  // Video/Audio toggle events
+  socket.on('video-toggle', (data) => {
+    const { sessionId, isVideoEnabled } = data;
+    socket.to(sessionId).emit('participant-video-toggle', {
+      userId: socket.userId,
+      isVideoEnabled
+    });
+  });
+
+  socket.on('audio-toggle', (data) => {
+    const { sessionId, isAudioEnabled } = data;
+    socket.to(sessionId).emit('participant-audio-toggle', {
+      userId: socket.userId,
+      isAudioEnabled
+    });
+  });
+
+  // Screen sharing events
+  socket.on('screen-share-start', (data) => {
+    const { sessionId } = data;
+    socket.to(sessionId).emit('participant-screen-share-start', {
+      userId: socket.userId
+    });
+  });
+
+  socket.on('screen-share-stop', (data) => {
+    const { sessionId } = data;
+    socket.to(sessionId).emit('participant-screen-share-stop', {
+      userId: socket.userId
+    });
+  });
+
+  // Handle disconnect
+  socket.on('disconnect', () => {
+    console.log(`User disconnected: ${socket.id}`);
+
+    if (socket.userId) {
+      activeUsers.delete(socket.userId);
+
+      // Remove from all conversation rooms
+      conversationRooms.forEach((users, conversationId) => {
+        users.delete(socket.userId);
+      });
+
+      // Broadcast online users update
+      io.emit('online_users_updated', Array.from(activeUsers.keys()));
+    }
+  });
+});
+
+server.listen(port, () => {
   console.log(`🚀 Backend server running at http://localhost:${port}`);
   console.log(`📋 Health check: http://localhost:${port}/health`);
   console.log(`🔐 Auth: http://localhost:${port}/api/auth/*`);
@@ -2971,4 +3248,5 @@ app.listen(port, () => {
   console.log(`🤝 Collaboration: http://localhost:${port}/api/collaboration/*`);
   console.log(`🌟 Community: http://localhost:${port}/api/community/*`);
   console.log(`🔍 Search: http://localhost:${port}/api/search*`);
+  console.log(`💬 WebSocket server ready for real-time features`);
 });
