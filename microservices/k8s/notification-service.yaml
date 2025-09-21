@@ -1,0 +1,199 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: skill-circle
+  labels:
+    app: notification-service
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+        tier: backend
+    spec:
+      containers:
+      - name: notification-service
+        image: ghcr.io/skill-circle/notification-service:latest
+        ports:
+        - containerPort: 3006
+        env:
+        - name: PORT
+          value: "3006"
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: skill-circle-config
+              key: NODE_ENV
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: skill-circle-secrets
+              key: mongodb-notifications-uri
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: skill-circle-secrets
+              key: jwt-secret
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: skill-circle-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: skill-circle-config
+              key: REDIS_PORT
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: skill-circle-secrets
+              key: redis-password
+        - name: EMAIL_SERVICE
+          valueFrom:
+            configMapKeyRef:
+              name: skill-circle-config
+              key: EMAIL_SERVICE
+        - name: FROM_EMAIL
+          valueFrom:
+            configMapKeyRef:
+              name: skill-circle-config
+              key: FROM_EMAIL
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: skill-circle-secrets
+              key: aws-access-key-id
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: skill-circle-secrets
+              key: aws-secret-access-key
+        - name: AWS_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: skill-circle-config
+              key: AWS_REGION
+        - name: TWILIO_ACCOUNT_SID
+          valueFrom:
+            secretKeyRef:
+              name: skill-circle-secrets
+              key: twilio-account-sid
+        - name: TWILIO_AUTH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: skill-circle-secrets
+              key: twilio-auth-token
+        - name: TWILIO_PHONE_NUMBER
+          valueFrom:
+            secretKeyRef:
+              name: skill-circle-secrets
+              key: twilio-phone-number
+        - name: FIREBASE_SERVICE_ACCOUNT
+          valueFrom:
+            secretKeyRef:
+              name: skill-circle-secrets
+              key: firebase-service-account
+        - name: VAPID_PUBLIC_KEY
+          valueFrom:
+            secretKeyRef:
+              name: skill-circle-secrets
+              key: vapid-public-key
+        - name: VAPID_PRIVATE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: skill-circle-secrets
+              key: vapid-private-key
+        - name: VAPID_SUBJECT
+          valueFrom:
+            configMapKeyRef:
+              name: skill-circle-config
+              key: VAPID_SUBJECT
+        - name: FRONTEND_URL
+          value: "https://skillcircle.com"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3006
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3006
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1001
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: logs
+          mountPath: /app/logs
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: logs
+        emptyDir: {}
+      securityContext:
+        fsGroup: 1001
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: skill-circle
+  labels:
+    app: notification-service
+spec:
+  selector:
+    app: notification-service
+  ports:
+  - port: 3006
+    targetPort: 3006
+    protocol: TCP
+  type: ClusterIP
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: notification-service-hpa
+  namespace: skill-circle
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: notification-service
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

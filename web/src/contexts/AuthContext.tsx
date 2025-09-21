@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { toast } from 'react-hot-toast'
+import { authApi } from '@/lib/api'
 
 interface User {
   id: string
@@ -166,20 +167,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Login
   const login = useCallback(async (email: string, password: string, rememberMe = false) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, rememberMe }),
-      })
+      const response = await authApi.login(email, password)
 
-      const data = await response.json()
-
-      if (response.ok) {
-        setUser(data.user)
-        storeTokens(data.tokens)
+      if (response.user && response.token) {
+        setUser(response.user)
+        // Mock tokens for development
+        const mockTokens: AuthTokens = {
+          accessToken: response.token,
+          refreshToken: response.token + '_refresh',
+          tokenType: 'Bearer',
+          expiresIn: '24h'
+        }
+        storeTokens(mockTokens)
         toast.success('Login successful!')
       } else {
-        throw new Error(data.message || 'Login failed')
+        throw new Error('Login failed')
       }
     } catch (error) {
       console.error('Login error:', error)
@@ -191,20 +193,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Register
   const register = useCallback(async (data: RegisterData) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
+      const response = await authApi.register(data)
 
-      const responseData = await response.json()
-
-      if (response.ok) {
-        setUser(responseData.user)
-        storeTokens(responseData.tokens)
+      if (response.user && response.token) {
+        setUser(response.user)
+        // Mock tokens for development
+        const mockTokens: AuthTokens = {
+          accessToken: response.token,
+          refreshToken: response.token + '_refresh',
+          tokenType: 'Bearer',
+          expiresIn: '24h'
+        }
+        storeTokens(mockTokens)
         toast.success('Registration successful!')
       } else {
-        throw new Error(responseData.message || 'Registration failed')
+        throw new Error('Registration failed')
       }
     } catch (error) {
       console.error('Registration error:', error)

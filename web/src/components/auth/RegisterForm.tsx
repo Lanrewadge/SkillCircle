@@ -57,10 +57,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
     if (!formData.password) {
       newErrors.password = 'Password is required'
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters'
-    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(formData.password)) {
-      newErrors.password = 'Password must contain uppercase, lowercase, number, and special character'
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters'
     }
 
     if (!formData.confirmPassword) {
@@ -87,8 +85,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         email: formData.email,
         password: formData.password,
         role: formData.role,
-        bio: formData.bio.trim(),
-        skills: formData.skills
+        bio: formData.bio.trim() || undefined,
+        skills: formData.skills.length > 0 ? formData.skills : undefined
       })
       router.push(redirectTo)
     } catch (error) {

@@ -1,0 +1,48 @@
+{
+  "name": "skill-circle-microservices",
+  "version": "1.0.0",
+  "description": "Microservices architecture for Skill Circle learning platform",
+  "scripts": {
+    "start": "docker-compose up -d",
+    "stop": "docker-compose down",
+    "restart": "docker-compose restart",
+    "logs": "docker-compose logs -f",
+    "build": "docker-compose build",
+    "clean": "docker-compose down -v --remove-orphans",
+    "dev": "docker-compose -f docker-compose.yml -f docker-compose.dev.yml up",
+    "dev:build": "docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build",
+    "prod": "docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d",
+    "status": "docker-compose ps",
+    "health": "docker-compose exec api-gateway curl -f http://localhost:3000/api/status || exit 1",
+    "setup": "npm run setup:env && npm run setup:databases",
+    "setup:env": "node scripts/setup-env.js",
+    "setup:databases": "node scripts/setup-databases.js",
+    "migrate": "npm run migrate:user && npm run migrate:learning",
+    "migrate:user": "docker-compose exec user-service npx prisma migrate deploy",
+    "migrate:learning": "docker-compose exec learning-service npx prisma migrate deploy",
+    "seed": "npm run seed:skills && npm run seed:content",
+    "seed:skills": "docker-compose exec skills-service npm run seed",
+    "seed:content": "docker-compose exec content-service npm run seed",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "docker-compose exec api-gateway npm test",
+    "test:integration": "node scripts/run-integration-tests.js",
+    "lint": "npm run lint:services",
+    "lint:services": "docker-compose exec api-gateway npm run lint || docker-compose exec user-service npm run lint || docker-compose exec skills-service npm run lint",
+    "backup": "node scripts/backup-data.js",
+    "restore": "node scripts/restore-data.js",
+    "monitor": "open http://localhost:8500 && open http://localhost:8081 && open http://localhost:8082",
+    "scale": "docker-compose up -d --scale"
+  },
+  "keywords": ["microservices", "docker", "nodejs", "learning-platform"],
+  "author": "Skill Circle Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.0",
+    "cross-env": "^7.0.3",
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}

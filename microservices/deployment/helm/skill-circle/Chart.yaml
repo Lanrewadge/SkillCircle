@@ -1,0 +1,46 @@
+apiVersion: v2
+name: skill-circle
+description: A Helm chart for Skill Circle microservices platform
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+home: https://skillcircle.com
+sources:
+  - https://github.com/your-org/skill-circle
+keywords:
+  - microservices
+  - learning
+  - education
+  - kubernetes
+maintainers:
+  - name: Skill Circle Team
+    email: devops@skillcircle.com
+dependencies:
+  - name: postgresql
+    version: 12.x.x
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+  - name: mongodb
+    version: 13.x.x
+    repository: https://charts.bitnami.com/bitnami
+    condition: mongodb.enabled
+  - name: redis
+    version: 17.x.x
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+  - name: rabbitmq
+    version: 11.x.x
+    repository: https://charts.bitnami.com/bitnami
+    condition: rabbitmq.enabled
+  - name: kafka
+    version: 22.x.x
+    repository: https://charts.bitnami.com/bitnami
+    condition: kafka.enabled
+  - name: prometheus
+    version: 21.x.x
+    repository: https://prometheus-community.github.io/helm-charts
+    condition: monitoring.prometheus.enabled
+  - name: grafana
+    version: 6.x.x
+    repository: https://grafana.github.io/helm-charts
+    condition: monitoring.grafana.enabled

@@ -1,0 +1,189 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: skill-circle-ingress
+  namespace: skill-circle
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+spec:
+  tls:
+  - hosts:
+    - skillcircle.com
+    - www.skillcircle.com
+    - api.skillcircle.com
+    secretName: skill-circle-tls
+  rules:
+  - host: skillcircle.com
+    http:
+      paths:
+      - path: /api/auth(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: user-service
+            port:
+              number: 3001
+      - path: /api/skills(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: skills-service
+            port:
+              number: 3002
+      - path: /api/courses(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: learning-service
+            port:
+              number: 3003
+      - path: /api/learning(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: learning-service
+            port:
+              number: 3003
+      - path: /api/content(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: content-service
+            port:
+              number: 3004
+      - path: /api/visualizations(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: visualization-service
+            port:
+              number: 3005
+      - path: /api/notifications(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: notification-service
+            port:
+              number: 3006
+      - path: /api(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway
+            port:
+              number: 3000
+      - path: /socket.io(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway
+            port:
+              number: 3000
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 3000
+
+  - host: www.skillcircle.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 3000
+
+  - host: api.skillcircle.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway
+            port:
+              number: 3000
+
+---
+# Monitoring Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: monitoring-ingress
+  namespace: skill-circle-monitoring
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: monitoring-basic-auth
+    nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
+spec:
+  tls:
+  - hosts:
+    - monitoring.skillcircle.com
+    - grafana.skillcircle.com
+    - prometheus.skillcircle.com
+    secretName: monitoring-tls
+  rules:
+  - host: monitoring.skillcircle.com
+    http:
+      paths:
+      - path: /grafana
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana
+            port:
+              number: 3000
+      - path: /prometheus
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus
+            port:
+              number: 9090
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana
+            port:
+              number: 3000
+
+  - host: grafana.skillcircle.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana
+            port:
+              number: 3000
+
+  - host: prometheus.skillcircle.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus
+            port:
+              number: 9090

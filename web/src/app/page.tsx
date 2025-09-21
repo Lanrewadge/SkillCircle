@@ -1,166 +1,219 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { SimpleThemeToggle } from '@/components/ui/theme-toggle'
 import { SearchBar } from '@/components/ui/search-bar'
-import { BookOpen, Users, MapPin, Star, MessageCircle, Calendar, Menu } from 'lucide-react'
+import { BookOpen, Users, MapPin, Star, MessageCircle, Calendar, Menu, Play, Clock, Award, TrendingUp, ChevronRight } from 'lucide-react'
+
+const featuredCourses = [
+  {
+    id: 1,
+    title: "Complete Web Development Bootcamp",
+    instructor: "Angela Yu",
+    rating: 4.7,
+    reviews: 267634,
+    price: "$94.99",
+    originalPrice: "$199.99",
+    image: "/api/placeholder/300/200",
+    category: "Development",
+    level: "Beginner",
+    duration: "65 hours",
+    students: "850,000+",
+    bestseller: true
+  },
+  {
+    id: 2,
+    title: "The Complete JavaScript Course",
+    instructor: "Jonas Schmedtmann",
+    rating: 4.6,
+    reviews: 151438,
+    price: "$89.99",
+    originalPrice: "$199.99",
+    image: "/api/placeholder/300/200",
+    category: "Development",
+    level: "Intermediate",
+    duration: "69 hours",
+    students: "720,000+",
+    bestseller: false
+  },
+  {
+    id: 3,
+    title: "React - The Complete Guide",
+    instructor: "Maximilian Schwarzmüller",
+    rating: 4.6,
+    reviews: 184329,
+    price: "$94.99",
+    originalPrice: "$199.99",
+    image: "/api/placeholder/300/200",
+    category: "Development",
+    level: "Intermediate",
+    duration: "48 hours",
+    students: "500,000+",
+    bestseller: true
+  },
+  {
+    id: 4,
+    title: "Python for Data Science and Machine Learning",
+    instructor: "Jose Portilla",
+    rating: 4.5,
+    reviews: 112345,
+    price: "$84.99",
+    originalPrice: "$199.99",
+    image: "/api/placeholder/300/200",
+    category: "Data Science",
+    level: "Intermediate",
+    duration: "25 hours",
+    students: "300,000+",
+    bestseller: false
+  }
+]
+
+const categories = [
+  { name: "Development", count: "850+ courses", icon: "💻", href: "/explore/technology" },
+  { name: "Business", count: "420+ courses", icon: "💼", href: "/explore/business" },
+  { name: "Physics", count: "150+ courses", icon: "⚛️", href: "/explore/physics" },
+  { name: "Mathematics", count: "200+ courses", icon: "📐", href: "/explore/mathematics" },
+  { name: "Chemistry", count: "120+ courses", icon: "🧪", href: "/explore/chemistry" },
+  { name: "Biology", count: "180+ courses", icon: "🧬", href: "/explore/biology" },
+  { name: "Engineering", count: "300+ courses", icon: "⚙️", href: "/explore/engineering" },
+  { name: "Geography", count: "195+ courses", icon: "🗺️", href: "/explore/geography" }
+]
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b bg-white dark:bg-gray-900 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             {/* Logo */}
             <div className="flex items-center space-x-4">
               <Link href="/" className="flex items-center space-x-2">
-                <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <div className="h-8 w-8 bg-purple-600 rounded flex items-center justify-center">
                   <span className="text-white font-bold text-sm">SC</span>
                 </div>
-                <span className="font-bold text-xl text-foreground">SkillCircle</span>
+                <span className="font-bold text-xl text-gray-900 dark:text-white">SkillCircle</span>
               </Link>
             </div>
 
-            {/* Search Bar - Hidden on mobile */}
+            {/* Navigation */}
+            <nav className="hidden md:flex items-center space-x-8">
+              <Button variant="ghost" className="text-gray-700 dark:text-gray-300">Categories</Button>
+            </nav>
+
+            {/* Search Bar */}
             <div className="hidden md:flex flex-1 max-w-lg mx-8">
-              <SearchBar showButton={false} className="w-full" />
+              <SearchBar showButton={true} className="w-full" placeholder="Search for anything" />
             </div>
 
             {/* Right side buttons */}
             <div className="flex items-center space-x-4">
-              {/* Theme Toggle */}
-              <SimpleThemeToggle />
-
-              {/* Mobile Menu Button */}
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="h-5 w-5" />
+              <Button variant="ghost" className="hidden md:block text-gray-700 dark:text-gray-300">Teach on SkillCircle</Button>
+              <Button variant="ghost" className="hidden md:block">
+                <BookOpen className="h-4 w-4 mr-2" />
+                My learning
               </Button>
-
-              {/* Auth Buttons - Hidden on mobile */}
+              <SimpleThemeToggle />
               <div className="hidden md:flex items-center space-x-2">
-                <Button variant="ghost" asChild>
-                  <Link href="/auth/login">Login</Link>
+                <Button variant="outline" asChild>
+                  <Link href="/auth">Log in</Link>
                 </Button>
-                <Button asChild>
-                  <Link href="/auth/register">Sign Up</Link>
+                <Button asChild className="bg-gray-900 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100">
+                  <Link href="/auth/register">Sign up</Link>
                 </Button>
               </div>
             </div>
-          </div>
-
-          {/* Mobile Search Bar */}
-          <div className="md:hidden pb-4">
-            <SearchBar showButton={false} className="w-full" />
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-background dark:bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
-              Learn & Teach
-              <span className="text-blue-600"> Skills Locally</span>
+      <section className="bg-gray-100 dark:bg-gray-800 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl">
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+              Skills that drive you forward
             </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-              Connect with passionate locals to learn new skills or share your expertise.
-              From cooking to coding, music to languages - discover your next adventure.
+            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
+              Technology and the world of work change fast — with us, you're faster. Get the skills to achieve goals and stay competitive.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button asChild size="lg" className="px-8 py-3">
-                <Link href="/auth/register">Start Learning</Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="px-8 py-3">
-                <Link href="/auth/register?tab=teach">Become a Teacher</Link>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button size="lg" className="bg-gray-900 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100">
+                Plan for teams
               </Button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-24 bg-background">
+      {/* Featured Courses */}
+      <section className="py-16 bg-white dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              How SkillCircle Works
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Simple, safe, and effective way to connect learners with local experts
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="text-center">
-              <CardHeader>
-                <div className="mx-auto w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                  <BookOpen className="w-6 h-6 text-blue-600" />
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Featured courses</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {featuredCourses.map((course) => (
+              <Card key={course.id} className="group cursor-pointer hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-700">
+                <div className="relative">
+                  <div className="aspect-video bg-gray-200 dark:bg-gray-700 rounded-t-lg flex items-center justify-center">
+                    <Play className="h-12 w-12 text-gray-400" />
+                  </div>
+                  {course.bestseller && (
+                    <Badge className="absolute top-2 left-2 bg-yellow-400 text-yellow-900 hover:bg-yellow-400">
+                      Bestseller
+                    </Badge>
+                  )}
                 </div>
-                <CardTitle>Discover Skills</CardTitle>
-                <CardDescription>
-                  Browse thousands of skills from cooking to coding, music to languages
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="text-center">
-              <CardHeader>
-                <div className="mx-auto w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
-                  <Users className="w-6 h-6 text-green-600" />
-                </div>
-                <CardTitle>Find Local Experts</CardTitle>
-                <CardDescription>
-                  Connect with verified teachers in your area who share your interests
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="text-center">
-              <CardHeader>
-                <div className="mx-auto w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
-                  <Calendar className="w-6 h-6 text-purple-600" />
-                </div>
-                <CardTitle>Book Sessions</CardTitle>
-                <CardDescription>
-                  Schedule convenient learning sessions online or in-person
-                </CardDescription>
-              </CardHeader>
-            </Card>
+                <CardContent className="p-4">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-purple-600 transition-colors">
+                    {course.title}
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{course.instructor}</p>
+                  <div className="flex items-center mb-2">
+                    <div className="flex items-center">
+                      <span className="text-sm font-semibold text-yellow-600 mr-1">{course.rating}</span>
+                      <div className="flex">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className={`h-3 w-3 ${i < Math.floor(course.rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
+                        ))}
+                      </div>
+                      <span className="text-xs text-gray-500 ml-1">({course.reviews.toLocaleString()})</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs text-gray-500 flex items-center">
+                      <Clock className="h-3 w-3 mr-1" />
+                      {course.duration}
+                    </span>
+                    <span className="text-xs text-gray-500">• {course.level}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-bold text-gray-900 dark:text-white">{course.price}</span>
+                      <span className="text-sm text-gray-500 line-through">{course.originalPrice}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Categories Section */}
-      <section className="py-24 bg-muted/50">
+      <section className="py-16 bg-gray-50 dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Popular Categories
-            </h2>
-            <p className="text-xl text-muted-foreground">
-              Explore skills across diverse categories
-            </p>
-          </div>
-
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Top categories</h2>
           <div className="grid md:grid-cols-4 gap-6">
-            {[
-              { name: 'Technology', icon: '💻', count: '850+ skills', link: '/explore/technology' },
-              { name: 'Medical', icon: '🏥', count: '420+ skills', link: '/explore' },
-              { name: 'Engineering', icon: '⚙️', count: '680+ skills', link: '/explore' },
-              { name: 'Fashion', icon: '👗', count: '280+ skills', link: '/explore' },
-              { name: 'Languages', icon: '🗣️', count: '320+ languages', link: '/explore' },
-              { name: 'Music', icon: '🎵', count: '180+ instruments', link: '/explore' },
-              { name: 'Business', icon: '💼', count: '380+ skills', link: '/explore' },
-              { name: 'Wellness', icon: '🧘', count: '190+ practices', link: '/explore' },
-            ].map((category) => (
-              <Link key={category.name} href={category.link}>
-                <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group">
-                  <CardContent className="text-center p-6">
-                    <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">{category.icon}</div>
-                    <h3 className="font-semibold text-foreground mb-1 group-hover:text-blue-600 transition-colors">{category.name}</h3>
-                    <p className="text-sm text-muted-foreground">{category.count}</p>
+            {categories.map((category) => (
+              <Link key={category.name} href={category.href}>
+                <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-700">
+                  <CardContent className="p-6 text-center">
+                    <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">{category.icon}</div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-purple-600 transition-colors">
+                      {category.name}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{category.count}</p>
                   </CardContent>
                 </Card>
               </Link>
@@ -169,17 +222,85 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Trusted by Section */}
+      <section className="py-16 bg-white dark:bg-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-12">
+            Trusted by over 57 million learners and 213,000 instructors
+          </h2>
+          <div className="grid md:grid-cols-4 gap-8">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-purple-600 mb-2">57M+</div>
+              <p className="text-gray-600 dark:text-gray-400">Students</p>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-purple-600 mb-2">213K+</div>
+              <p className="text-gray-600 dark:text-gray-400">Instructors</p>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-purple-600 mb-2">75+</div>
+              <p className="text-gray-600 dark:text-gray-400">Languages</p>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-purple-600 mb-2">773M+</div>
+              <p className="text-gray-600 dark:text-gray-400">Course enrollments</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="py-16 bg-gray-50 dark:bg-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">How SkillCircle works</h2>
+            <p className="text-xl text-gray-600 dark:text-gray-300">
+              Whether you want to learn or share what you know, you've come to the right place.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                <BookOpen className="h-8 w-8 text-purple-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Learn</h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Access thousands of courses from expert instructors on hundreds of topics.
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="h-8 w-8 text-purple-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Practice</h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Apply your skills with hands-on projects and real-world assignments.
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Award className="h-8 w-8 text-purple-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Achieve</h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Earn certificates and advance your career with new skills.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
-      <section className="py-24 bg-blue-600 dark:bg-blue-700">
+      <section className="py-16 bg-purple-600 dark:bg-purple-700">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            Ready to Start Your Learning Journey?
+            Transform your life through learning
           </h2>
-          <p className="text-xl text-blue-100 dark:text-blue-200 mb-8">
-            Join thousands of learners and teachers in the SkillCircle community
+          <p className="text-xl text-purple-100 mb-8">
+            Learners around the world are launching new careers, advancing in their fields, and enriching their lives.
           </p>
-          <Button asChild size="lg" variant="secondary" className="px-8 py-3">
-            <Link href="/auth/register">Get Started Free</Link>
+          <Button size="lg" variant="secondary" className="bg-white text-purple-600 hover:bg-gray-100">
+            Start learning today
           </Button>
         </div>
       </section>
@@ -187,17 +308,42 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="bg-gray-900 dark:bg-gray-950 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h3 className="text-2xl font-bold mb-4">SkillCircle</h3>
-            <p className="text-gray-400 dark:text-gray-500 mb-8">
-              Connecting learners with local experts
-            </p>
-            <div className="flex justify-center space-x-6">
-              <Link href="/about" className="text-gray-400 dark:text-gray-500 hover:text-white">About</Link>
-              <Link href="/privacy" className="text-gray-400 dark:text-gray-500 hover:text-white">Privacy</Link>
-              <Link href="/terms" className="text-gray-400 dark:text-gray-500 hover:text-white">Terms</Link>
-              <Link href="/contact" className="text-gray-400 dark:text-gray-500 hover:text-white">Contact</Link>
+          <div className="grid md:grid-cols-4 gap-8">
+            <div>
+              <h3 className="font-semibold mb-4">SkillCircle</h3>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><Link href="/about" className="hover:text-white">About us</Link></li>
+                <li><Link href="/careers" className="hover:text-white">Careers</Link></li>
+                <li><Link href="/press" className="hover:text-white">Press</Link></li>
+              </ul>
             </div>
+            <div>
+              <h3 className="font-semibold mb-4">Community</h3>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><Link href="/learners" className="hover:text-white">Learners</Link></li>
+                <li><Link href="/partners" className="hover:text-white">Partners</Link></li>
+                <li><Link href="/developers" className="hover:text-white">Developers</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-4">More</h3>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><Link href="/investors" className="hover:text-white">Investors</Link></li>
+                <li><Link href="/terms" className="hover:text-white">Terms</Link></li>
+                <li><Link href="/privacy" className="hover:text-white">Privacy policy</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-4">Support</h3>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><Link href="/help" className="hover:text-white">Help and support</Link></li>
+                <li><Link href="/trust" className="hover:text-white">Trust & safety</Link></li>
+                <li><Link href="/contact" className="hover:text-white">Contact us</Link></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center">
+            <p className="text-gray-400 text-sm">© 2024 SkillCircle, Inc.</p>
           </div>
         </div>
       </footer>

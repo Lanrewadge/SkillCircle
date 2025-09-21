@@ -1,0 +1,365 @@
+# Global configuration
+global:
+  imageRegistry: "ghcr.io"
+  imageRepository: "your-org/skill-circle"
+  imageTag: "latest"
+  imagePullPolicy: IfNotPresent
+
+  # Environment
+  environment: production
+
+  # Security
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+    readOnlyRootFilesystem: true
+
+  # Storage classes
+  storageClass: "gp2"
+
+  # Ingress
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/rate-limit: "100"
+
+# Service configurations
+services:
+  apiGateway:
+    name: api-gateway
+    replicas: 3
+    port: 3000
+    image:
+      repository: api-gateway
+      tag: ""
+
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+
+    ingress:
+      enabled: true
+      hosts:
+        - host: api.skillcircle.com
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - secretName: api-gateway-tls
+          hosts:
+            - api.skillcircle.com
+
+  userService:
+    name: user-service
+    replicas: 2
+    port: 3001
+    image:
+      repository: user-service
+      tag: ""
+
+    resources:
+      requests:
+        memory: "384Mi"
+        cpu: "300m"
+      limits:
+        memory: "768Mi"
+        cpu: "600m"
+
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPUUtilizationPercentage: 70
+
+    database:
+      name: skill_circle_users
+      migrations:
+        enabled: true
+
+  skillsService:
+    name: skills-service
+    replicas: 2
+    port: 3002
+    image:
+      repository: skills-service
+      tag: ""
+
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPUUtilizationPercentage: 70
+
+  learningService:
+    name: learning-service
+    replicas: 2
+    port: 3003
+    image:
+      repository: learning-service
+      tag: ""
+
+    resources:
+      requests:
+        memory: "384Mi"
+        cpu: "300m"
+      limits:
+        memory: "768Mi"
+        cpu: "600m"
+
+    database:
+      name: skill_circle_learning
+      migrations:
+        enabled: true
+
+  contentService:
+    name: content-service
+    replicas: 2
+    port: 3004
+    image:
+      repository: content-service
+      tag: ""
+
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "400m"
+      limits:
+        memory: "1Gi"
+        cpu: "800m"
+
+  visualizationService:
+    name: visualization-service
+    replicas: 2
+    port: 3005
+    image:
+      repository: visualization-service
+      tag: ""
+
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+  notificationService:
+    name: notification-service
+    replicas: 2
+    port: 3006
+    image:
+      repository: notification-service
+      tag: ""
+
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+# Infrastructure dependencies
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "secure-postgres-password"
+    database: "skill_circle"
+  primary:
+    persistence:
+      enabled: true
+      size: 20Gi
+      storageClass: "gp2"
+    resources:
+      requests:
+        memory: 1Gi
+        cpu: 500m
+      limits:
+        memory: 2Gi
+        cpu: 1000m
+
+mongodb:
+  enabled: true
+  auth:
+    enabled: true
+    rootPassword: "secure-mongo-password"
+    database: "skill_circle_content"
+  persistence:
+    enabled: true
+    size: 20Gi
+    storageClass: "gp2"
+  resources:
+    requests:
+      memory: 1Gi
+      cpu: 500m
+    limits:
+      memory: 2Gi
+      cpu: 1000m
+
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    password: "secure-redis-password"
+  master:
+    persistence:
+      enabled: true
+      size: 8Gi
+      storageClass: "gp2"
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 250m
+      limits:
+        memory: 1Gi
+        cpu: 500m
+
+rabbitmq:
+  enabled: true
+  auth:
+    username: "skill-circle"
+    password: "secure-rabbitmq-password"
+  persistence:
+    enabled: true
+    size: 8Gi
+    storageClass: "gp2"
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 1Gi
+      cpu: 500m
+
+kafka:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: "gp2"
+  zookeeper:
+    persistence:
+      enabled: true
+      size: 8Gi
+      storageClass: "gp2"
+
+# Monitoring stack
+monitoring:
+  prometheus:
+    enabled: true
+    server:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
+        storageClass: "gp2"
+
+  grafana:
+    enabled: true
+    persistence:
+      enabled: true
+      size: 2Gi
+      storageClass: "gp2"
+
+    # Pre-configured dashboards
+    dashboards:
+      default:
+        skill-circle-overview:
+          gnetId: 1860
+          revision: 27
+          datasource: Prometheus
+
+# Security configurations
+secrets:
+  jwt:
+    secret: "your-256-bit-jwt-secret-key-change-in-production"
+    refreshSecret: "your-256-bit-refresh-secret-key-change-in-production"
+
+  encryption:
+    key: "your-256-bit-encryption-key-change-in-production"
+
+  api:
+    keys:
+      internal: "your-internal-api-key-change-in-production"
+
+# Network policies
+networkPolicies:
+  enabled: true
+
+  # Default deny all ingress
+  defaultDeny: true
+
+  # Allow specific communication patterns
+  rules:
+    - name: api-gateway-to-services
+      from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+      to:
+        - podSelector:
+            matchLabels:
+              tier: backend
+
+    - name: services-to-databases
+      from:
+        - podSelector:
+            matchLabels:
+              tier: backend
+      to:
+        - podSelector:
+            matchLabels:
+              tier: database
+
+# Pod disruption budgets
+podDisruptionBudgets:
+  enabled: true
+  minAvailable: "50%"
+
+# Service mesh (if using Istio)
+serviceMesh:
+  enabled: false
+  istio:
+    injection: enabled
+
+# Backup configuration
+backup:
+  enabled: true
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  retention: "30d"
+
+  databases:
+    postgresql:
+      enabled: true
+    mongodb:
+      enabled: true
+    redis:
+      enabled: true
+
+# Disaster recovery
+disasterRecovery:
+  enabled: true
+  crossRegionReplication: true
+  rto: "1h"  # Recovery Time Objective
+  rpo: "15m" # Recovery Point Objective

@@ -38,7 +38,13 @@ import {
   GraduationCap,
   Briefcase,
   BarChart3,
-  Globe
+  Globe,
+  Atom,
+  Calculator,
+  Microscope,
+  Zap,
+  Cog,
+  MapPin
 } from 'lucide-react'
 
 export default function Header() {
@@ -162,6 +168,44 @@ export default function Header() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuLabel>STEM Disciplines</DropdownMenuLabel>
+                <DropdownMenuItem asChild>
+                  <Link href="/explore/physics" className="flex items-center">
+                    <Atom className="w-4 h-4 mr-2" />
+                    Physics
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/explore/mathematics" className="flex items-center">
+                    <Calculator className="w-4 h-4 mr-2" />
+                    Mathematics
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/explore/chemistry" className="flex items-center">
+                    <Microscope className="w-4 h-4 mr-2" />
+                    Chemistry
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/explore/biology" className="flex items-center">
+                    <Microscope className="w-4 h-4 mr-2" />
+                    Biology
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/explore/engineering" className="flex items-center">
+                    <Cog className="w-4 h-4 mr-2" />
+                    Engineering
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/explore/geography" className="flex items-center">
+                    <MapPin className="w-4 h-4 mr-2" />
+                    Geography
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/dashboard/skills/categories" className="flex items-center">
                     <BarChart3 className="w-4 h-4 mr-2" />
@@ -186,6 +230,12 @@ export default function Header() {
                   <Link href="/dashboard/learning" className="flex items-center">
                     <BookOpen className="w-4 h-4 mr-2" />
                     Current Courses
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/learning/courses" className="flex items-center">
+                    <GraduationCap className="w-4 h-4 mr-2" />
+                    Institutional Courses
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -447,12 +497,75 @@ export default function Header() {
                   <span>My Learning</span>
                 </Link>
                 <Link
+                  href="/learning/courses"
+                  className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm hover:bg-accent ml-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <GraduationCap className="w-4 h-4" />
+                  <span>Institutional Courses</span>
+                </Link>
+                <Link
                   href="/dashboard/progress"
                   className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm hover:bg-accent ml-2"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   <TrendingUp className="w-4 h-4" />
                   <span>Progress Tracking</span>
+                </Link>
+              </div>
+
+              {/* STEM Categories - Mobile */}
+              <div className="space-y-1 pt-2">
+                <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  STEM Disciplines
+                </div>
+                <Link
+                  href="/explore/physics"
+                  className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm hover:bg-accent ml-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Atom className="w-4 h-4" />
+                  <span>Physics</span>
+                </Link>
+                <Link
+                  href="/explore/mathematics"
+                  className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm hover:bg-accent ml-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Calculator className="w-4 h-4" />
+                  <span>Mathematics</span>
+                </Link>
+                <Link
+                  href="/explore/chemistry"
+                  className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm hover:bg-accent ml-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Microscope className="w-4 h-4" />
+                  <span>Chemistry</span>
+                </Link>
+                <Link
+                  href="/explore/biology"
+                  className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm hover:bg-accent ml-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Microscope className="w-4 h-4" />
+                  <span>Biology</span>
+                </Link>
+                <Link
+                  href="/explore/engineering"
+                  className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm hover:bg-accent ml-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Cog className="w-4 h-4" />
+                  <span>Engineering</span>
+                </Link>
+                <Link
+                  href="/explore/geography"
+                  className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm hover:bg-accent ml-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <MapPin className="w-4 h-4" />
+                  <span>Geography</span>
                 </Link>
               </div>
 

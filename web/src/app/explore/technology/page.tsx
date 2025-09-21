@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Separator } from '@/components/ui/separator'
 import {
   Search,
   Star,
@@ -24,8 +27,227 @@ import {
   ChevronRight,
   DollarSign,
   Calendar,
-  Filter
+  Filter,
+  BookOpen,
+  Map,
+  Video,
+  Play,
+  Award,
+  Zap,
+  Target,
+  CheckCircle,
+  ArrowRight,
+  Briefcase,
+  TrendingDown,
+  MessageSquare,
+  Camera,
+  Mic,
+  Settings,
+  PieChart,
+  BarChart3,
+  Layers,
+  Code2,
+  Palette,
+  Bot
 } from 'lucide-react'
+
+// Structured Learning Content (Beginner to Advanced)
+const learningPaths = {
+  beginner: {
+    title: 'Foundation Level',
+    duration: '2-4 months',
+    courses: [
+      {
+        title: 'Programming Fundamentals',
+        topics: ['Variables & Data Types', 'Control Structures', 'Functions', 'Basic Algorithms'],
+        duration: '4 weeks',
+        difficulty: 'Beginner'
+      },
+      {
+        title: 'Web Development Basics',
+        topics: ['HTML5 Fundamentals', 'CSS3 Styling', 'JavaScript Basics', 'DOM Manipulation'],
+        duration: '6 weeks',
+        difficulty: 'Beginner'
+      },
+      {
+        title: 'Database Fundamentals',
+        topics: ['SQL Basics', 'Database Design', 'CRUD Operations', 'Data Modeling'],
+        duration: '4 weeks',
+        difficulty: 'Beginner'
+      }
+    ]
+  },
+  intermediate: {
+    title: 'Professional Level',
+    duration: '6-8 months',
+    courses: [
+      {
+        title: 'Advanced Frontend Development',
+        topics: ['React/Vue.js', 'State Management', 'API Integration', 'Testing'],
+        duration: '8 weeks',
+        difficulty: 'Intermediate'
+      },
+      {
+        title: 'Backend Development',
+        topics: ['Server Architecture', 'RESTful APIs', 'Authentication', 'Database Optimization'],
+        duration: '10 weeks',
+        difficulty: 'Intermediate'
+      },
+      {
+        title: 'DevOps Essentials',
+        topics: ['CI/CD Pipelines', 'Containerization', 'Cloud Services', 'Monitoring'],
+        duration: '6 weeks',
+        difficulty: 'Intermediate'
+      }
+    ]
+  },
+  advanced: {
+    title: 'Expert Level',
+    duration: '8-12 months',
+    courses: [
+      {
+        title: 'System Architecture',
+        topics: ['Microservices', 'Scalability', 'Performance Optimization', 'Security'],
+        duration: '12 weeks',
+        difficulty: 'Advanced'
+      },
+      {
+        title: 'Machine Learning & AI',
+        topics: ['Deep Learning', 'Neural Networks', 'Computer Vision', 'NLP'],
+        duration: '16 weeks',
+        difficulty: 'Advanced'
+      },
+      {
+        title: 'Blockchain Development',
+        topics: ['Smart Contracts', 'DeFi', 'Web3', 'Cryptocurrency'],
+        duration: '10 weeks',
+        difficulty: 'Advanced'
+      }
+    ]
+  }
+}
+
+// Technology Encyclopedia
+const techEncyclopedia = {
+  fundamentals: {
+    title: 'Computer Science Fundamentals',
+    topics: [
+      {
+        name: 'Data Structures',
+        description: 'Arrays, linked lists, trees, graphs, hash tables',
+        importance: 'Essential for efficient algorithm design',
+        applications: ['Database indexing', 'Network routing', 'Memory management']
+      },
+      {
+        name: 'Algorithms',
+        description: 'Sorting, searching, dynamic programming, greedy algorithms',
+        importance: 'Problem-solving foundation',
+        applications: ['Search engines', 'Route optimization', 'Data compression']
+      },
+      {
+        name: 'System Design',
+        description: 'Architecture patterns, scalability, distributed systems',
+        importance: 'Building robust applications',
+        applications: ['Cloud services', 'Social media platforms', 'E-commerce systems']
+      }
+    ]
+  },
+  technologies: {
+    title: 'Modern Technologies',
+    topics: [
+      {
+        name: 'Artificial Intelligence',
+        description: 'Machine learning, deep learning, neural networks',
+        importance: 'Automation and intelligent systems',
+        applications: ['Autonomous vehicles', 'Medical diagnosis', 'Language translation']
+      },
+      {
+        name: 'Cloud Computing',
+        description: 'AWS, Azure, Google Cloud, serverless architecture',
+        importance: 'Scalable and cost-effective infrastructure',
+        applications: ['Global applications', 'Big data processing', 'IoT systems']
+      },
+      {
+        name: 'Cybersecurity',
+        description: 'Encryption, penetration testing, security protocols',
+        importance: 'Protecting digital assets',
+        applications: ['Financial systems', 'Healthcare data', 'Government infrastructure']
+      }
+    ]
+  }
+}
+
+// Interactive Roadmaps
+const interactiveRoadmaps = {
+  webDeveloper: {
+    title: 'Full-Stack Web Developer',
+    duration: '12-18 months',
+    steps: [
+      {
+        phase: 'Foundation',
+        duration: '3 months',
+        skills: ['HTML5', 'CSS3', 'JavaScript ES6+', 'Git/GitHub'],
+        projects: ['Personal Portfolio', 'Landing Pages', 'Interactive Forms'],
+        completed: false
+      },
+      {
+        phase: 'Frontend Mastery',
+        duration: '4 months',
+        skills: ['React/Vue.js', 'TypeScript', 'State Management', 'Testing'],
+        projects: ['E-commerce Frontend', 'Social Media Dashboard', 'Progressive Web App'],
+        completed: false
+      },
+      {
+        phase: 'Backend Development',
+        duration: '4 months',
+        skills: ['Node.js/Python', 'Databases', 'APIs', 'Authentication'],
+        projects: ['REST API', 'Real-time Chat App', 'Microservices'],
+        completed: false
+      },
+      {
+        phase: 'Full-Stack Integration',
+        duration: '3 months',
+        skills: ['DevOps', 'Cloud Deployment', 'Performance Optimization', 'Security'],
+        projects: ['Complete Web Application', 'Portfolio Showcase', 'Open Source Contribution'],
+        completed: false
+      }
+    ]
+  },
+  dataScientist: {
+    title: 'Data Scientist & AI Specialist',
+    duration: '15-20 months',
+    steps: [
+      {
+        phase: 'Mathematical Foundation',
+        duration: '4 months',
+        skills: ['Statistics', 'Linear Algebra', 'Calculus', 'Python/R'],
+        projects: ['Statistical Analysis', 'Data Visualization', 'Hypothesis Testing'],
+        completed: false
+      },
+      {
+        phase: 'Machine Learning',
+        duration: '5 months',
+        skills: ['Supervised Learning', 'Unsupervised Learning', 'Feature Engineering', 'Model Evaluation'],
+        projects: ['Prediction Models', 'Recommendation System', 'Classification Projects'],
+        completed: false
+      },
+      {
+        phase: 'Deep Learning & AI',
+        duration: '6 months',
+        skills: ['Neural Networks', 'Computer Vision', 'NLP', 'Reinforcement Learning'],
+        projects: ['Image Recognition', 'Chatbot', 'Game AI', 'Language Model'],
+        completed: false
+      },
+      {
+        phase: 'Production & Deployment',
+        duration: '3 months',
+        skills: ['MLOps', 'Model Deployment', 'Monitoring', 'Scaling'],
+        projects: ['Production ML Pipeline', 'AI API Service', 'Data Dashboard'],
+        completed: false
+      }
+    ]
+  }
+}
 
 const techSubcategories = [
   {
@@ -330,6 +552,9 @@ export default function TechnologyPage() {
   const [selectedSubcategory, setSelectedSubcategory] = useState('all')
   const [sortBy, setSortBy] = useState('popular')
   const [showAllSkills, setShowAllSkills] = useState(false)
+  const [activeTab, setActiveTab] = useState('overview')
+  const [selectedRoadmap, setSelectedRoadmap] = useState('webDeveloper')
+  const [roadmapProgress, setRoadmapProgress] = useState(0)
 
   const filteredSkills = featuredTechSkills.filter(skill => {
     const matchesSearch = skill.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -647,6 +872,548 @@ export default function TechnologyPage() {
           >
             {showAllSkills ? 'Hide' : 'Show'} All Technology Skills
           </Button>
+        </div>
+      </section>
+
+      {/* Comprehensive Learning Tabs */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-background/30">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Complete Technology Learning System
+            </h2>
+            <p className="text-xl text-muted-foreground">
+              From beginner to expert - everything you need to master technology
+            </p>
+          </div>
+
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-5 mb-8">
+              <TabsTrigger value="overview" className="flex items-center gap-2">
+                <Globe className="w-4 h-4" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="content" className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4" />
+                Content
+              </TabsTrigger>
+              <TabsTrigger value="roadmaps" className="flex items-center gap-2">
+                <Map className="w-4 h-4" />
+                Roadmaps
+              </TabsTrigger>
+              <TabsTrigger value="encyclopedia" className="flex items-center gap-2">
+                <Brain className="w-4 h-4" />
+                Encyclopedia
+              </TabsTrigger>
+              <TabsTrigger value="meetings" className="flex items-center gap-2">
+                <Video className="w-4 h-4" />
+                Meetings
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Overview Tab */}
+            <TabsContent value="overview" className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {techSubcategories.map((subcategory) => (
+                  <Card key={subcategory.id} className="group hover:shadow-lg transition-all duration-300">
+                    <CardHeader className="pb-3">
+                      <div className={`w-12 h-12 ${subcategory.color} rounded-xl flex items-center justify-center text-white mb-3`}>
+                        {subcategory.icon}
+                      </div>
+                      <CardTitle className="text-lg">{subcategory.name}</CardTitle>
+                      <CardDescription className="text-sm">{subcategory.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-sm text-muted-foreground">{subcategory.skillCount} skills</span>
+                        {subcategory.trending && (
+                          <Badge className="bg-red-500 text-white text-xs">🔥 Hot</Badge>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {subcategory.skills.slice(0, 3).map((skill, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-xs">{skill}</Badge>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            {/* Structured Content Tab */}
+            <TabsContent value="content" className="space-y-8">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {Object.entries(learningPaths).map(([level, path]) => (
+                  <Card key={level} className="h-fit">
+                    <CardHeader>
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-white ${
+                          level === 'beginner' ? 'bg-green-500' :
+                          level === 'intermediate' ? 'bg-yellow-500' : 'bg-red-500'
+                        }`}>
+                          {level === 'beginner' ? <Target className="w-5 h-5" /> :
+                           level === 'intermediate' ? <Zap className="w-5 h-5" /> : <Award className="w-5 h-5" />}
+                        </div>
+                        <div>
+                          <CardTitle className="text-xl">{path.title}</CardTitle>
+                          <p className="text-sm text-muted-foreground">{path.duration}</p>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {path.courses.map((course, idx) => (
+                        <div key={idx} className="border rounded-lg p-4 space-y-3">
+                          <div className="flex justify-between items-start">
+                            <h4 className="font-medium">{course.title}</h4>
+                            <Badge variant="outline" className="text-xs">{course.duration}</Badge>
+                          </div>
+                          <div className="space-y-2">
+                            {course.topics.map((topic, topicIdx) => (
+                              <div key={topicIdx} className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <CheckCircle className="w-3 h-3 text-green-500" />
+                                {topic}
+                              </div>
+                            ))}
+                          </div>
+                          <Button size="sm" className="w-full mt-3">
+                            <Play className="w-4 h-4 mr-2" />
+                            Start Learning
+                          </Button>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            {/* Interactive Roadmaps Tab */}
+            <TabsContent value="roadmaps" className="space-y-8">
+              <div className="flex flex-col lg:flex-row gap-8">
+                {/* Roadmap Selection */}
+                <div className="lg:w-1/3 space-y-4">
+                  <h3 className="text-xl font-bold">Choose Your Path</h3>
+                  {Object.entries(interactiveRoadmaps).map(([key, roadmap]) => (
+                    <Card
+                      key={key}
+                      className={`cursor-pointer transition-all ${
+                        selectedRoadmap === key ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:shadow-md'
+                      }`}
+                      onClick={() => setSelectedRoadmap(key)}
+                    >
+                      <CardContent className="p-4">
+                        <h4 className="font-medium">{roadmap.title}</h4>
+                        <p className="text-sm text-muted-foreground">{roadmap.duration}</p>
+                        <Progress value={roadmapProgress} className="mt-2" />
+                        <p className="text-xs text-muted-foreground mt-1">{roadmapProgress}% Complete</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                {/* Roadmap Detail */}
+                <div className="lg:w-2/3">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-2xl">
+                        {interactiveRoadmaps[selectedRoadmap as keyof typeof interactiveRoadmaps].title}
+                      </CardTitle>
+                      <p className="text-muted-foreground">
+                        Complete roadmap to become a professional {interactiveRoadmaps[selectedRoadmap as keyof typeof interactiveRoadmaps].title.toLowerCase()}
+                      </p>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {interactiveRoadmaps[selectedRoadmap as keyof typeof interactiveRoadmaps].steps.map((step, idx) => (
+                        <div key={idx} className="relative">
+                          {idx < interactiveRoadmaps[selectedRoadmap as keyof typeof interactiveRoadmaps].steps.length - 1 && (
+                            <div className="absolute left-6 top-12 w-0.5 h-16 bg-border"></div>
+                          )}
+                          <div className="flex gap-4">
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold ${
+                              step.completed ? 'bg-green-500' : 'bg-gray-400'
+                            }`}>
+                              {idx + 1}
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex justify-between items-start mb-2">
+                                <h4 className="font-medium text-lg">{step.phase}</h4>
+                                <Badge variant="outline">{step.duration}</Badge>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                  <h5 className="font-medium text-sm mb-2">Skills to Learn:</h5>
+                                  <div className="flex flex-wrap gap-1">
+                                    {step.skills.map((skill, skillIdx) => (
+                                      <Badge key={skillIdx} variant="secondary" className="text-xs">
+                                        {skill}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                                <div>
+                                  <h5 className="font-medium text-sm mb-2">Projects:</h5>
+                                  <div className="space-y-1">
+                                    {step.projects.map((project, projIdx) => (
+                                      <div key={projIdx} className="text-sm text-muted-foreground flex items-center gap-2">
+                                        <ArrowRight className="w-3 h-3" />
+                                        {project}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <Button size="sm" variant={step.completed ? 'secondary' : 'default'}>
+                                {step.completed ? 'Completed' : 'Start Phase'}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Encyclopedia Tab */}
+            <TabsContent value="encyclopedia" className="space-y-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {Object.entries(techEncyclopedia).map(([category, section]) => (
+                  <Card key={category}>
+                    <CardHeader>
+                      <CardTitle className="text-xl flex items-center gap-2">
+                        <BookOpen className="w-5 h-5" />
+                        {section.title}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {section.topics.map((topic, idx) => (
+                        <div key={idx} className="border-l-4 border-blue-500 pl-4 space-y-2">
+                          <h4 className="font-medium text-lg">{topic.name}</h4>
+                          <p className="text-sm text-muted-foreground">{topic.description}</p>
+                          <div className="space-y-2">
+                            <div>
+                              <span className="text-xs font-medium text-blue-600">Why Important:</span>
+                              <p className="text-xs text-muted-foreground">{topic.importance}</p>
+                            </div>
+                            <div>
+                              <span className="text-xs font-medium text-green-600">Applications:</span>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {topic.applications.map((app, appIdx) => (
+                                  <Badge key={appIdx} variant="outline" className="text-xs">
+                                    {app}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            {/* Video/Audio Meetings Tab */}
+            <TabsContent value="meetings" className="space-y-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Live Sessions */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Video className="w-5 h-5" />
+                      Live Learning Sessions
+                    </CardTitle>
+                    <CardDescription>
+                      Join real-time video sessions with instructors and peers
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {[
+                      {
+                        title: 'React Advanced Patterns',
+                        instructor: 'Sarah Johnson',
+                        time: 'Today 3:00 PM',
+                        participants: 24,
+                        type: 'Workshop'
+                      },
+                      {
+                        title: 'Python Machine Learning Q&A',
+                        instructor: 'Dr. Michael Chen',
+                        time: 'Tomorrow 2:00 PM',
+                        participants: 18,
+                        type: 'Q&A Session'
+                      },
+                      {
+                        title: 'System Design Interview Prep',
+                        instructor: 'Alex Rodriguez',
+                        time: 'Wed 4:00 PM',
+                        participants: 12,
+                        type: 'Study Group'
+                      }
+                    ].map((session, idx) => (
+                      <div key={idx} className="border rounded-lg p-4 space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-medium">{session.title}</h4>
+                            <p className="text-sm text-muted-foreground">by {session.instructor}</p>
+                          </div>
+                          <Badge variant="outline">{session.type}</Badge>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-4 h-4" />
+                              {session.time}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Users className="w-4 h-4" />
+                              {session.participants}
+                            </div>
+                          </div>
+                          <Button size="sm">
+                            <Video className="w-4 h-4 mr-2" />
+                            Join
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                {/* Create Meeting */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Calendar className="w-5 h-5" />
+                      Organize Your Session
+                    </CardTitle>
+                    <CardDescription>
+                      Create your own learning or teaching session
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <Button className="flex items-center gap-2 h-20 flex-col">
+                        <Video className="w-6 h-6" />
+                        <span className="text-sm">Video Meeting</span>
+                      </Button>
+                      <Button variant="outline" className="flex items-center gap-2 h-20 flex-col">
+                        <Mic className="w-6 h-6" />
+                        <span className="text-sm">Audio Only</span>
+                      </Button>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-3">
+                      <h4 className="font-medium">Quick Start Options:</h4>
+                      <div className="space-y-2">
+                        <Button variant="outline" className="w-full justify-start">
+                          <Briefcase className="w-4 h-4 mr-2" />
+                          Study Group Session
+                        </Button>
+                        <Button variant="outline" className="w-full justify-start">
+                          <MessageSquare className="w-4 h-4 mr-2" />
+                          Code Review Meeting
+                        </Button>
+                        <Button variant="outline" className="w-full justify-start">
+                          <Target className="w-4 h-4 mr-2" />
+                          Interview Practice
+                        </Button>
+                        <Button variant="outline" className="w-full justify-start">
+                          <Brain className="w-4 h-4 mr-2" />
+                          Problem Solving Session
+                        </Button>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-3">
+                      <h4 className="font-medium">Meeting Features:</h4>
+                      <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          Screen Sharing
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          Code Editor
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          Whiteboard
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          Recording
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Meeting Statistics */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5" />
+                    Learning Analytics
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">24</div>
+                      <div className="text-sm text-muted-foreground">Sessions Attended</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">156</div>
+                      <div className="text-sm text-muted-foreground">Learning Hours</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-purple-600">8</div>
+                      <div className="text-sm text-muted-foreground">Skills Mastered</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-orange-600">12</div>
+                      <div className="text-sm text-muted-foreground">Certificates Earned</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </section>
+
+      {/* Graphical Illustrations Section */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Interactive Learning Visualizations
+            </h2>
+            <p className="text-xl text-muted-foreground">
+              Learn complex concepts through interactive diagrams and visual guides
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Algorithm Visualization */}
+            <Card className="group hover:shadow-xl transition-all duration-300">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Code2 className="w-5 h-5" />
+                  Algorithm Visualization
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg p-6 mb-4 min-h-32 flex items-center justify-center">
+                  <div className="text-center">
+                    <Code className="w-12 h-12 text-blue-600 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">Interactive sorting animations</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Bubble Sort</span>
+                    <span className="text-blue-600">Interactive Demo</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Quick Sort</span>
+                    <span className="text-green-600">Step-by-step</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Merge Sort</span>
+                    <span className="text-purple-600">Visualization</span>
+                  </div>
+                </div>
+                <Button className="w-full mt-4 group-hover:bg-blue-600">
+                  <Play className="w-4 h-4 mr-2" />
+                  Try Interactive Demo
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* System Architecture */}
+            <Card className="group hover:shadow-xl transition-all duration-300">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Layers className="w-5 h-5" />
+                  System Architecture
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-gradient-to-br from-green-100 to-blue-100 rounded-lg p-6 mb-4 min-h-32 flex items-center justify-center">
+                  <div className="text-center">
+                    <Layers className="w-12 h-12 text-green-600 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">3D system diagrams</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Microservices</span>
+                    <span className="text-blue-600">3D Model</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Database Design</span>
+                    <span className="text-green-600">Interactive</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Cloud Architecture</span>
+                    <span className="text-purple-600">Animated</span>
+                  </div>
+                </div>
+                <Button className="w-full mt-4 group-hover:bg-green-600">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Explore Architecture
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* AI/ML Concepts */}
+            <Card className="group hover:shadow-xl transition-all duration-300">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bot className="w-5 h-5" />
+                  AI/ML Concepts
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg p-6 mb-4 min-h-32 flex items-center justify-center">
+                  <div className="text-center">
+                    <Brain className="w-12 h-12 text-purple-600 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">Neural network playground</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Neural Networks</span>
+                    <span className="text-blue-600">Interactive</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Decision Trees</span>
+                    <span className="text-green-600">Visual</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Deep Learning</span>
+                    <span className="text-purple-600">Animated</span>
+                  </div>
+                </div>
+                <Button className="w-full mt-4 group-hover:bg-purple-600">
+                  <Bot className="w-4 h-4 mr-2" />
+                  Train Your Model
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </section>
 

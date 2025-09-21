@@ -2,7 +2,7 @@ import axios from 'axios';
 import { User, Skill, Session, Match } from '@skill-circle/shared';
 import { handleApiError, showErrorToast, withErrorHandling, retryWithExponentialBackoff } from './error-handling';
 
-const isDevelopment = false; // Force real API calls for testing integration
+const isDevelopment = true; // Use mock data when backend is not available
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 // Create axios instance

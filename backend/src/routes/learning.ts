@@ -3,6 +3,7 @@ import { body, validationResult } from 'express-validator';
 import { PrismaClient } from '@prisma/client';
 import { authenticate } from '../middleware/auth';
 import { createError } from '../middleware/errorHandler';
+const institutionalCourses = require('../../data/institutional-courses');
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -481,6 +482,477 @@ router.get('/recommendations', authenticate, async (req, res, next) => {
         rating: 4.9,
         duration: '4 weeks',
         price: 69
+      }
+    ];
+
+    res.json({
+      success: true,
+      data: recommendations
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get institutional courses
+router.get('/courses', async (req, res, next) => {
+  try {
+    const { category, search, page = 1, limit = 20 } = req.query;
+
+    let courses = Object.values(institutionalCourses);
+
+    // Apply filters
+    if (category) {
+      courses = courses.filter(course =>
+        course.category.toLowerCase().includes((category as string).toLowerCase())
+      );
+    }
+
+    if (search) {
+      const searchTerm = (search as string).toLowerCase();
+      courses = courses.filter(course =>
+        course.title.toLowerCase().includes(searchTerm) ||
+        course.description.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    // Pagination
+    const startIndex = (Number(page) - 1) * Number(limit);
+    const endIndex = startIndex + Number(limit);
+    const paginatedCourses = courses.slice(startIndex, endIndex);
+
+    res.json({
+      success: true,
+      data: {
+        courses: paginatedCourses,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total: courses.length,
+          pages: Math.ceil(courses.length / Number(limit))
+        },
+        categories: [...new Set(Object.values(institutionalCourses).map(c => c.category))]
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get specific institutional course
+router.get('/courses/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const course = institutionalCourses[id];
+
+    if (!course) {
+      throw createError(404, 'Course not found');
+    }
+
+    res.json({
+      success: true,
+      data: course
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get course roadmap
+router.get('/courses/:id/roadmap', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const course = institutionalCourses[id];
+
+    if (!course) {
+      throw createError(404, 'Course not found');
+    }
+
+    res.json({
+      success: true,
+      data: {
+        courseId: id,
+        title: course.title,
+        roadmap: course.roadmap
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get course encyclopedia entry
+router.get('/courses/:courseId/encyclopedia/:topicId', async (req, res, next) => {
+  try {
+    const { courseId, topicId } = req.params;
+    const course = institutionalCourses[courseId];
+
+    if (!course) {
+      throw createError(404, 'Course not found');
+    }
+
+    // Find the encyclopedia entry in the course roadmap
+    let encyclopediaEntry = null;
+
+    // Search through all years, semesters, and courses
+    for (const yearData of Object.values(course.roadmap)) {
+      for (const semesterData of yearData.courses) {
+        for (const courseItem of semesterData.courses) {
+          if (courseItem.code === topicId && courseItem.encyclopedia) {
+            encyclopediaEntry = {
+              ...courseItem.encyclopedia,
+              courseCode: courseItem.code,
+              courseTitle: courseItem.title,
+              credits: courseItem.credits,
+              difficulty: courseItem.difficulty,
+              topics: courseItem.topics
+            };
+            break;
+          }
+        }
+        if (encyclopediaEntry) break;
+      }
+      if (encyclopediaEntry) break;
+    }
+
+    if (!encyclopediaEntry) {
+      throw createError(404, 'Encyclopedia entry not found');
+    }
+
+    res.json({
+      success: true,
+      data: encyclopediaEntry
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get all course categories
+router.get('/course-categories', async (req, res, next) => {
+  try {
+    const categories = [...new Set(Object.values(institutionalCourses).map(c => c.category))];
+
+    const categoryStats = categories.map(category => {
+      const coursesInCategory = Object.values(institutionalCourses).filter(c => c.category === category);
+      return {
+        name: category,
+        count: coursesInCategory.length,
+        courses: coursesInCategory.map(c => ({
+          id: c.id,
+          title: c.title,
+          duration: c.duration,
+          creditHours: c.creditHours
+        }))
+      };
+    });
+
+    res.json({
+      success: true,
+      data: categoryStats
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Enroll in institutional course
+router.post('/courses/:id/enroll', authenticate, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user.id;
+    const course = institutionalCourses[id];
+
+    if (!course) {
+      throw createError(404, 'Course not found');
+    }
+
+    // In a real app, you'd create an enrollment record
+    // Check if already enrolled
+    // await prisma.courseEnrollment.create({
+    //   data: {
+    //     userId,
+    //     courseId: id,
+    //     enrolledAt: new Date(),
+    //     status: 'active'
+    //   }
+    // });
+
+    res.json({
+      success: true,
+      message: 'Successfully enrolled in course',
+      data: {
+        courseId: id,
+        enrolledAt: new Date(),
+        expectedGraduation: new Date(Date.now() + (parseInt(course.duration.split(' ')[0]) * 365 * 24 * 60 * 60 * 1000))
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get enrolled courses
+router.get('/my-courses', authenticate, async (req, res, next) => {
+  try {
+    const userId = (req as any).user.id;
+
+    // Mock enrolled courses data
+    const enrolledCourses = [
+      {
+        id: 'computer-science',
+        course: institutionalCourses['computer-science'],
+        enrolledAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 90), // 90 days ago
+        progress: {
+          overallProgress: 35,
+          currentYear: 1,
+          currentSemester: 2,
+          completedCourses: 3,
+          totalCourses: 32,
+          gpa: 3.7,
+          creditsEarned: 12,
+          creditsRequired: 120
+        },
+        currentCourse: {
+          code: 'CS102',
+          title: 'Object-Oriented Programming',
+          progress: 75,
+          dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14) // 2 weeks from now
+        },
+        nextMilestone: {
+          title: 'Complete Freshman Year',
+          description: 'Finish remaining courses in freshman curriculum',
+          dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 120), // 4 months
+          progress: 65
+        }
+      }
+    ];
+
+    res.json({
+      success: true,
+      data: enrolledCourses
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get course progress details
+router.get('/courses/:id/progress', authenticate, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user.id;
+    const course = institutionalCourses[id];
+
+    if (!course) {
+      throw createError(404, 'Course not found');
+    }
+
+    // Mock detailed progress data
+    const progressData = {
+      courseId: id,
+      userId,
+      enrolledAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 90),
+      overallProgress: 35,
+      currentYear: 1,
+      currentSemester: 2,
+      academicRecord: {
+        gpa: 3.7,
+        creditsEarned: 12,
+        creditsRequired: 120,
+        expectedGraduation: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 * 3.5)
+      },
+      yearProgress: [
+        {
+          year: 1,
+          title: 'Foundation Year',
+          progress: 65,
+          semesters: [
+            {
+              semester: 1,
+              completed: true,
+              gpa: 3.8,
+              courses: [
+                {
+                  code: 'CS101',
+                  title: 'Introduction to Programming',
+                  credits: 3,
+                  grade: 'A',
+                  completed: true,
+                  finalScore: 95
+                },
+                {
+                  code: 'MATH141',
+                  title: 'Calculus I',
+                  credits: 4,
+                  grade: 'B+',
+                  completed: true,
+                  finalScore: 87
+                }
+              ]
+            },
+            {
+              semester: 2,
+              completed: false,
+              progress: 30,
+              courses: [
+                {
+                  code: 'CS102',
+                  title: 'Object-Oriented Programming',
+                  credits: 3,
+                  grade: null,
+                  completed: false,
+                  progress: 75,
+                  assignments: {
+                    completed: 6,
+                    total: 8,
+                    averageScore: 92
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      achievements: [
+        {
+          id: 'first-semester',
+          title: 'First Semester Complete',
+          description: 'Successfully completed your first semester',
+          earnedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 60),
+          icon: '🎓'
+        },
+        {
+          id: 'high-gpa',
+          title: 'Academic Excellence',
+          description: 'Maintained GPA above 3.5',
+          earnedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 60),
+          icon: '⭐'
+        }
+      ],
+      upcomingDeadlines: [
+        {
+          type: 'assignment',
+          title: 'OOP Final Project',
+          courseCode: 'CS102',
+          dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14),
+          priority: 'high'
+        },
+        {
+          type: 'exam',
+          title: 'Midterm Exam',
+          courseCode: 'CS102',
+          dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 21),
+          priority: 'medium'
+        }
+      ]
+    };
+
+    res.json({
+      success: true,
+      data: progressData
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Update course progress
+router.put('/courses/:courseId/courses/:courseCode/progress', [
+  body('progress').isInt({ min: 0, max: 100 }),
+  body('action').optional().isIn(['complete', 'update', 'submit_assignment'])
+], authenticate, async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw createError(400, 'Validation failed', errors.array());
+    }
+
+    const { courseId, courseCode } = req.params;
+    const { progress, action, data } = req.body;
+    const userId = (req as any).user.id;
+
+    // In a real app, you'd update the progress in the database
+    // await prisma.courseProgress.upsert({
+    //   where: {
+    //     userId_courseId_courseCode: { userId, courseId, courseCode }
+    //   },
+    //   create: {
+    //     userId,
+    //     courseId,
+    //     courseCode,
+    //     progress,
+    //     lastUpdated: new Date()
+    //   },
+    //   update: {
+    //     progress,
+    //     lastUpdated: new Date()
+    //   }
+    // });
+
+    let result = {
+      courseId,
+      courseCode,
+      progress,
+      lastUpdated: new Date()
+    };
+
+    if (action === 'complete') {
+      result = {
+        ...result,
+        completed: true,
+        completedAt: new Date(),
+        pointsEarned: 100,
+        newAchievements: []
+      };
+    }
+
+    res.json({
+      success: true,
+      message: 'Progress updated successfully',
+      data: result
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get course recommendations
+router.get('/course-recommendations', authenticate, async (req, res, next) => {
+  try {
+    const userId = (req as any).user.id;
+
+    // Mock recommendations based on user's current enrollments and interests
+    const recommendations = [
+      {
+        id: 'mathematics',
+        course: institutionalCourses['mathematics'],
+        reason: 'Complements your Computer Science studies',
+        relevanceScore: 95,
+        prerequisites: {
+          met: true,
+          missing: []
+        }
+      },
+      {
+        id: 'physics',
+        course: institutionalCourses['physics'],
+        reason: 'Strong foundation for engineering careers',
+        relevanceScore: 88,
+        prerequisites: {
+          met: true,
+          missing: []
+        }
+      },
+      {
+        id: 'businessAdministration',
+        course: institutionalCourses['businessAdministration'],
+        reason: 'Popular dual degree with Computer Science',
+        relevanceScore: 75,
+        prerequisites: {
+          met: true,
+          missing: []
+        }
       }
     ];
 

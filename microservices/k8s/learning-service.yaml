@@ -1,0 +1,142 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: learning-service
+  namespace: skill-circle
+  labels:
+    app: learning-service
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: learning-service
+  template:
+    metadata:
+      labels:
+        app: learning-service
+        tier: backend
+    spec:
+      containers:
+      - name: learning-service
+        image: ghcr.io/skill-circle/learning-service:latest
+        ports:
+        - containerPort: 3003
+        env:
+        - name: PORT
+          value: "3003"
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: skill-circle-config
+              key: NODE_ENV
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: skill-circle-secrets
+              key: mongodb-learning-uri
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: skill-circle-secrets
+              key: jwt-secret
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: skill-circle-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: skill-circle-config
+              key: REDIS_PORT
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: skill-circle-secrets
+              key: redis-password
+        - name: RABBITMQ_URL
+          valueFrom:
+            secretKeyRef:
+              name: skill-circle-secrets
+              key: rabbitmq-url
+        resources:
+          requests:
+            memory: "384Mi"
+            cpu: "300m"
+          limits:
+            memory: "768Mi"
+            cpu: "600m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3003
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3003
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1001
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: logs
+          mountPath: /app/logs
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: logs
+        emptyDir: {}
+      securityContext:
+        fsGroup: 1001
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: learning-service
+  namespace: skill-circle
+  labels:
+    app: learning-service
+spec:
+  selector:
+    app: learning-service
+  ports:
+  - port: 3003
+    targetPort: 3003
+    protocol: TCP
+  type: ClusterIP
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: learning-service-hpa
+  namespace: skill-circle
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: learning-service
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

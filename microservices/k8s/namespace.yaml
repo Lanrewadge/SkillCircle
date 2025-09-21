@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: skill-circle
+  labels:
+    name: skill-circle
+    purpose: microservices-platform
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: skill-circle-monitoring
+  labels:
+    name: skill-circle-monitoring
+    purpose: observability
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: skill-circle-system
+  labels:
+    name: skill-circle-system
+    purpose: infrastructure

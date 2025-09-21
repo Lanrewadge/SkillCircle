@@ -61,8 +61,24 @@ export default function SkillsPage() {
     }
   })
 
-  // Import skills data
-  const { allSkills, skillCategories } = await import('@/data/skills')
+  // Import skills data (moved to regular import)
+  // Note: If this needs to be dynamic, move to useEffect with setState
+  const [skillsData, setSkillsData] = useState<{ allSkills: any[], skillCategories: any[] }>({ allSkills: [], skillCategories: [] })
+
+  // Load skills data
+  useEffect(() => {
+    const loadSkillsData = async () => {
+      try {
+        const { allSkills, skillCategories } = await import('@/data/skills')
+        setSkillsData({ allSkills, skillCategories })
+      } catch (error) {
+        console.error('Failed to load skills data:', error)
+        // Fallback to empty arrays
+        setSkillsData({ allSkills: [], skillCategories: [] })
+      }
+    }
+    loadSkillsData()
+  }, [])
 
   // Mock user skills data using real skill definitions
   const mockUserSkills = [
@@ -74,7 +90,7 @@ export default function SkillsPage() {
       hourlyRate: 85,
       currency: 'USD',
       isActive: true,
-      skill: allSkills.find(s => s.id === 'react-development'),
+      skill: skillsData.allSkills.find(s => s.id === 'react-development'),
       students: 24,
       rating: 4.8,
       totalSessions: 89,
@@ -88,7 +104,7 @@ export default function SkillsPage() {
       hourlyRate: 70,
       currency: 'USD',
       isActive: true,
-      skill: allSkills.find(s => s.id === 'python-programming'),
+      skill: skillsData.allSkills.find(s => s.id === 'python-programming'),
       students: 18,
       rating: 4.7,
       totalSessions: 52,
@@ -102,7 +118,7 @@ export default function SkillsPage() {
       hourlyRate: 45,
       currency: 'USD',
       isActive: true,
-      skill: allSkills.find(s => s.id === 'italian-cooking'),
+      skill: skillsData.allSkills.find(s => s.id === 'italian-cooking'),
       students: 12,
       rating: 4.9,
       totalSessions: 35,
@@ -110,7 +126,7 @@ export default function SkillsPage() {
     }
   ]
 
-  const mockAvailableSkills = allSkills.filter(skill =>
+  const mockAvailableSkills = skillsData.allSkills.filter(skill =>
     !mockUserSkills.some(userSkill => userSkill.skill?.id === skill.id)
   )
 

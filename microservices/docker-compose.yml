@@ -1,0 +1,315 @@
+version: '3.8'
+
+services:
+  # Infrastructure Services
+  consul:
+    image: consul:1.15
+    container_name: skill-circle-consul
+    ports:
+      - "8500:8500"
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+    command: agent -server -bootstrap -ui -client=0.0.0.0
+
+  redis:
+    image: redis:7-alpine
+    container_name: skill-circle-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: skill-circle-postgres
+    environment:
+      POSTGRES_DB: skill_circle
+      POSTGRES_USER: skill_circle_user
+      POSTGRES_PASSWORD: skill_circle_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts/postgres:/docker-entrypoint-initdb.d
+
+  mongodb:
+    image: mongo:7
+    container_name: skill-circle-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin_password
+      MONGO_INITDB_DATABASE: skill_circle_skills
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./init-scripts/mongodb:/docker-entrypoint-initdb.d
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: skill-circle-api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-in-production
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+      - USER_SERVICE_URL=http://user-service:3001
+      - SKILLS_SERVICE_URL=http://skills-service:3002
+      - LEARNING_SERVICE_URL=http://learning-service:3003
+      - CONTENT_SERVICE_URL=http://content-service:3004
+      - VISUALIZATION_SERVICE_URL=http://visualization-service:3005
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3006
+      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
+    depends_on:
+      - consul
+      - redis
+    volumes:
+      - ./api-gateway/logs:/app/logs
+    networks:
+      - skill-circle-network
+
+  # User Service
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    container_name: skill-circle-user-service
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DATABASE_URL=postgresql://skill_circle_user:user_password@postgres:5432/skill_circle_users
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-in-production
+      - JWT_EXPIRES_IN=1h
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+      - SERVICE_HOST=user-service
+      - EMAIL_HOST=smtp.gmail.com
+      - EMAIL_PORT=587
+      - EMAIL_USER=your-email@gmail.com
+      - EMAIL_PASS=your-app-password
+      - ALLOWED_ORIGINS=http://localhost:3000
+    depends_on:
+      - postgres
+      - redis
+      - consul
+    volumes:
+      - ./user-service/logs:/app/logs
+      - ./user-service/uploads:/app/uploads
+    networks:
+      - skill-circle-network
+
+  # Skills Service
+  skills-service:
+    build:
+      context: ./skills-service
+      dockerfile: Dockerfile
+    container_name: skill-circle-skills-service
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - MONGODB_URI=mongodb://admin:admin_password@mongodb:27017/skill_circle_skills?authSource=admin
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+      - SERVICE_HOST=skills-service
+      - ALLOWED_ORIGINS=http://localhost:3000
+    depends_on:
+      - mongodb
+      - redis
+      - consul
+    volumes:
+      - ./skills-service/logs:/app/logs
+    networks:
+      - skill-circle-network
+
+  # Learning Service
+  learning-service:
+    build:
+      context: ./learning-service
+      dockerfile: Dockerfile
+    container_name: skill-circle-learning-service
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=development
+      - PORT=3003
+      - DATABASE_URL=postgresql://skill_circle_learning:learning_password@postgres:5432/skill_circle_learning
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+      - SERVICE_HOST=learning-service
+      - USER_SERVICE_URL=http://user-service:3001
+      - SKILLS_SERVICE_URL=http://skills-service:3002
+      - ALLOWED_ORIGINS=http://localhost:3000
+    depends_on:
+      - postgres
+      - redis
+      - consul
+    volumes:
+      - ./learning-service/logs:/app/logs
+    networks:
+      - skill-circle-network
+
+  # Content Service
+  content-service:
+    build:
+      context: ./content-service
+      dockerfile: Dockerfile
+    container_name: skill-circle-content-service
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=development
+      - PORT=3004
+      - MONGODB_URI=mongodb://admin:admin_password@mongodb:27017/skill_circle_content?authSource=admin
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+      - SERVICE_HOST=content-service
+      - SKILLS_SERVICE_URL=http://skills-service:3002
+      - ALLOWED_ORIGINS=http://localhost:3000
+    depends_on:
+      - mongodb
+      - redis
+      - consul
+    volumes:
+      - ./content-service/logs:/app/logs
+      - ./content-service/uploads:/app/uploads
+    networks:
+      - skill-circle-network
+
+  # Visualization Service
+  visualization-service:
+    build:
+      context: ./visualization-service
+      dockerfile: Dockerfile
+    container_name: skill-circle-visualization-service
+    ports:
+      - "3005:3005"
+    environment:
+      - NODE_ENV=development
+      - PORT=3005
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+      - SERVICE_HOST=visualization-service
+      - SKILLS_SERVICE_URL=http://skills-service:3002
+      - LEARNING_SERVICE_URL=http://learning-service:3003
+      - ALLOWED_ORIGINS=http://localhost:3000
+    depends_on:
+      - redis
+      - consul
+    volumes:
+      - ./visualization-service/logs:/app/logs
+      - ./visualization-service/cache:/app/cache
+    networks:
+      - skill-circle-network
+
+  # Notification Service
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: skill-circle-notification-service
+    ports:
+      - "3006:3006"
+    environment:
+      - NODE_ENV=development
+      - PORT=3006
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+      - SERVICE_HOST=notification-service
+      - USER_SERVICE_URL=http://user-service:3001
+      - EMAIL_HOST=smtp.gmail.com
+      - EMAIL_PORT=587
+      - EMAIL_USER=your-email@gmail.com
+      - EMAIL_PASS=your-app-password
+      - WEBSOCKET_PORT=3007
+      - ALLOWED_ORIGINS=http://localhost:3000
+    depends_on:
+      - redis
+      - consul
+    volumes:
+      - ./notification-service/logs:/app/logs
+    networks:
+      - skill-circle-network
+
+  # Monitoring and Management
+  nginx:
+    image: nginx:alpine
+    container_name: skill-circle-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/sites:/etc/nginx/sites-available
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - api-gateway
+    networks:
+      - skill-circle-network
+
+  # Development tools
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: skill-circle-redis-commander
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - skill-circle-network
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: skill-circle-mongo-express
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: admin_password
+      ME_CONFIG_MONGODB_URL: mongodb://admin:admin_password@mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin
+    ports:
+      - "8082:8081"
+    depends_on:
+      - mongodb
+    networks:
+      - skill-circle-network
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  redis_data:
+
+networks:
+  skill-circle-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

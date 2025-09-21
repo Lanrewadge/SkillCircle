@@ -1,0 +1,201 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STUDENT
+  TEACHER
+  ADMIN
+  MODERATOR
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+}
+
+model User {
+  id                String     @id @default(cuid())
+  email             String     @unique
+  username          String?    @unique
+  firstName         String?
+  lastName          String?
+  passwordHash      String
+  role              UserRole   @default(STUDENT)
+  status            UserStatus @default(PENDING_VERIFICATION)
+  avatar            String?
+  bio               String?
+  dateOfBirth       DateTime?
+  location          String?
+  timezone          String?
+  language          String     @default("en")
+
+  // Email verification
+  emailVerified     Boolean    @default(false)
+  emailVerificationToken String?
+  emailVerifiedAt   DateTime?
+
+  // Password reset
+  passwordResetToken     String?
+  passwordResetExpiresAt DateTime?
+
+  // Authentication tracking
+  lastLoginAt       DateTime?
+  loginCount        Int        @default(0)
+  failedLoginAttempts Int      @default(0)
+  lockedUntil       DateTime?
+
+  // Social auth (future extension)
+  googleId          String?
+  githubId          String?
+  linkedinId        String?
+
+  // Preferences
+  preferences       UserPreferences?
+
+  // Security
+  twoFactorEnabled  Boolean    @default(false)
+  twoFactorSecret   String?
+  backupCodes       String[]   @default([])
+
+  // Metadata
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  deletedAt         DateTime?
+
+  // Relations
+  sessions          Session[]
+  activityLogs      ActivityLog[]
+  notifications     Notification[]
+
+  @@map("users")
+}
+
+model UserPreferences {
+  id                      String  @id @default(cuid())
+  userId                  String  @unique
+  user                    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Learning preferences
+  learningStyle           String? // "visual", "kinesthetic", "analytical", "social"
+  difficultyPreference    String? // "beginner", "intermediate", "advanced"
+  studyReminders          Boolean @default(true)
+  weeklyGoalHours         Int?    @default(10)
+
+  // Notification preferences
+  emailNotifications      Boolean @default(true)
+  pushNotifications       Boolean @default(true)
+  achievementNotifications Boolean @default(true)
+  reminderNotifications   Boolean @default(true)
+  weeklyDigest            Boolean @default(true)
+
+  // Privacy settings
+  profileVisibility       String  @default("public") // "public", "friends", "private"
+  showProgress            Boolean @default(true)
+  showAchievements        Boolean @default(true)
+  allowDirectMessages     Boolean @default(true)
+
+  // UI preferences
+  theme                   String  @default("light") // "light", "dark", "auto"
+  animations              Boolean @default(true)
+  interactivity           Boolean @default(true)
+  progressTracking        Boolean @default(true)
+  gamification            Boolean @default(true)
+
+  // Content preferences
+  contentLanguage         String  @default("en")
+  subtitles               Boolean @default(false)
+  autoplay                Boolean @default(false)
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@map("user_preferences")
+}
+
+model Session {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  sessionToken    String    @unique
+  refreshToken    String    @unique
+  deviceId        String?
+  deviceInfo      Json?     // Browser, OS, etc.
+  ipAddress       String?
+  location        String?   // GeoIP location
+
+  isActive        Boolean   @default(true)
+  expiresAt       DateTime
+  refreshExpiresAt DateTime
+
+  createdAt       DateTime  @default(now())
+  lastAccessedAt  DateTime  @default(now())
+  revokedAt       DateTime?
+
+  @@map("sessions")
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  action      String   // "login", "logout", "password_change", "profile_update", etc.
+  description String?
+  metadata    Json?    // Additional context data
+  ipAddress   String?
+  userAgent   String?
+
+  createdAt   DateTime @default(now())
+
+  @@map("activity_logs")
+}
+
+model Notification {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type          String    // "achievement", "reminder", "system", etc.
+  title         String
+  message       String
+  data          Json?     // Additional notification data
+
+  isRead        Boolean   @default(false)
+  readAt        DateTime?
+
+  // Delivery tracking
+  emailSent     Boolean   @default(false)
+  emailSentAt   DateTime?
+  pushSent      Boolean   @default(false)
+  pushSentAt    DateTime?
+
+  expiresAt     DateTime?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("notifications")
+}
+
+// Indexes for performance
+@@index([User.email])
+@@index([User.status])
+@@index([User.role])
+@@index([Session.userId])
+@@index([Session.sessionToken])
+@@index([ActivityLog.userId])
+@@index([ActivityLog.action])
+@@index([Notification.userId])
+@@index([Notification.isRead])

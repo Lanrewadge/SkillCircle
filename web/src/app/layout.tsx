@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
@@ -19,7 +19,6 @@ export const metadata: Metadata = {
   description: 'Connect with local experts to learn new skills or share your expertise with others.',
   keywords: ['skills', 'learning', 'teaching', 'local', 'community', 'education'],
   manifest: '/manifest.json',
-  themeColor: '#3B82F6',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -47,11 +46,13 @@ export const metadata: Metadata = {
     description: 'Connect with local experts to learn new skills or share your expertise with others.',
     images: ['/icons/icon-512x512.png'],
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    viewportFit: 'cover',
-  },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#3B82F6',
 }
 
 export default function RootLayout({
