@@ -36,9 +36,38 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [skillInput, setSkillInput] = useState('')
+  const [passwordStrength, setPasswordStrength] = useState(0)
+  const [isEmailVerified, setIsEmailVerified] = useState(false)
+  const [emailVerificationCode, setEmailVerificationCode] = useState('')
+  const [showEmailVerification, setShowEmailVerification] = useState(false)
 
   const { register } = useAuth()
   const router = useRouter()
+
+  const calculatePasswordStrength = (password: string) => {
+    let strength = 0
+    if (password.length >= 8) strength += 25
+    if (password.length >= 12) strength += 15
+    if (/[a-z]/.test(password)) strength += 10
+    if (/[A-Z]/.test(password)) strength += 10
+    if (/[0-9]/.test(password)) strength += 15
+    if (/[^A-Za-z0-9]/.test(password)) strength += 25
+    return Math.min(strength, 100)
+  }
+
+  const getPasswordStrengthLabel = (strength: number) => {
+    if (strength < 30) return 'Weak'
+    if (strength < 60) return 'Fair'
+    if (strength < 80) return 'Good'
+    return 'Strong'
+  }
+
+  const getPasswordStrengthColor = (strength: number) => {
+    if (strength < 30) return 'bg-red-500'
+    if (strength < 60) return 'bg-yellow-500'
+    if (strength < 80) return 'bg-blue-500'
+    return 'bg-green-500'
+  }
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
@@ -57,14 +86,20 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
     if (!formData.password) {
       newErrors.password = 'Password is required'
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters'
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters'
+    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
+      newErrors.password = 'Password must contain at least one uppercase letter, one lowercase letter, and one number'
     }
 
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = 'Please confirm your password'
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match'
+    }
+
+    if (!isEmailVerified) {
+      newErrors.emailVerification = 'Please verify your email address before proceeding'
     }
 
     setErrors(newErrors)
@@ -101,10 +136,16 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   const handleInputChange = (field: string) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
+    const value = e.target.value
     setFormData(prev => ({
       ...prev,
-      [field]: e.target.value
+      [field]: value
     }))
+
+    // Calculate password strength for password field
+    if (field === 'password') {
+      setPasswordStrength(calculatePasswordStrength(value))
+    }
 
     if (errors[field]) {
       setErrors(prev => {
@@ -140,6 +181,56 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     if (e.key === 'Enter') {
       e.preventDefault()
       addSkill()
+    }
+  }
+
+  const sendEmailVerification = async () => {
+    try {
+      setIsLoading(true)
+      // TODO: Call API to send verification email
+      const response = await fetch('/api/auth/send-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email })
+      })
+
+      if (response.ok) {
+        setShowEmailVerification(true)
+        toast.success('Verification code sent to your email!')
+      } else {
+        throw new Error('Failed to send verification email')
+      }
+    } catch (error) {
+      toast.error('Failed to send verification email. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const verifyEmailCode = async () => {
+    try {
+      setIsLoading(true)
+      // TODO: Call API to verify email code
+      const response = await fetch('/api/auth/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          code: emailVerificationCode
+        })
+      })
+
+      if (response.ok) {
+        setIsEmailVerified(true)
+        setShowEmailVerification(false)
+        toast.success('Email verified successfully!')
+      } else {
+        throw new Error('Invalid verification code')
+      }
+    } catch (error) {
+      setErrors({ emailVerification: 'Invalid verification code. Please try again.' })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -193,10 +284,60 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
                 className={`pl-10 ${errors.email ? 'border-red-500' : ''}`}
                 disabled={isLoading}
                 autoComplete="email"
+                spellCheck={false}
+                data-lpignore="true"
               />
             </div>
             {errors.email && (
               <p className="text-sm text-red-500">{errors.email}</p>
+            )}
+            {formData.email && !isEmailVerified && !showEmailVerification && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={sendEmailVerification}
+                disabled={isLoading || !/\S+@\S+\.\S+/.test(formData.email)}
+                className="w-full"
+              >
+                Verify Email Address
+              </Button>
+            )}
+            {showEmailVerification && (
+              <div className="space-y-2">
+                <div className="flex space-x-2">
+                  <Input
+                    type="text"
+                    placeholder="Enter verification code"
+                    value={emailVerificationCode}
+                    onChange={(e) => setEmailVerificationCode(e.target.value)}
+                    disabled={isLoading}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    onClick={verifyEmailCode}
+                    disabled={isLoading || !emailVerificationCode.trim()}
+                    size="sm"
+                  >
+                    Verify
+                  </Button>
+                </div>
+                {errors.emailVerification && (
+                  <p className="text-sm text-red-500">{errors.emailVerification}</p>
+                )}
+                <p className="text-xs text-gray-600">
+                  Check your email for the verification code
+                </p>
+              </div>
+            )}
+            {isEmailVerified && (
+              <div className="flex items-center space-x-2 text-green-600 text-sm">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span>Email verified successfully!</span>
+              </div>
             )}
           </div>
 
@@ -213,6 +354,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
                 className={`pl-10 pr-10 ${errors.password ? 'border-red-500' : ''}`}
                 disabled={isLoading}
                 autoComplete="new-password"
+                spellCheck={false}
+                data-lpignore="true"
               />
               <button
                 type="button"
@@ -225,6 +368,22 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             </div>
             {errors.password && (
               <p className="text-sm text-red-500">{errors.password}</p>
+            )}
+            {formData.password && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span>Password strength:</span>
+                  <span className={`font-medium ${passwordStrength < 30 ? 'text-red-500' : passwordStrength < 60 ? 'text-yellow-500' : passwordStrength < 80 ? 'text-blue-500' : 'text-green-500'}`}>
+                    {getPasswordStrengthLabel(passwordStrength)}
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className={`h-2 rounded-full transition-all duration-300 ${getPasswordStrengthColor(passwordStrength)}`}
+                    style={{ width: `${passwordStrength}%` }}
+                  ></div>
+                </div>
+              </div>
             )}
           </div>
 
@@ -241,6 +400,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
                 className={`pl-10 pr-10 ${errors.confirmPassword ? 'border-red-500' : ''}`}
                 disabled={isLoading}
                 autoComplete="new-password"
+                spellCheck={false}
+                data-lpignore="true"
               />
               <button
                 type="button"

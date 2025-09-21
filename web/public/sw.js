@@ -1,16 +1,27 @@
-const CACHE_NAME = 'skillcircle-v1'
+const CACHE_NAME = 'skillcircle-v2'
+const STATIC_CACHE = `${CACHE_NAME}-static`
+const DYNAMIC_CACHE = `${CACHE_NAME}-dynamic`
+const IMAGE_CACHE = `${CACHE_NAME}-images`
+
 const STATIC_CACHE_URLS = [
   '/',
   '/dashboard',
   '/dashboard/skills/browse',
   '/dashboard/messages',
   '/dashboard/profile',
-  '/offline'
+  '/search',
+  '/community',
+  '/marketplace',
+  '/offline',
+  '/manifest.json'
 ]
 
 const API_CACHE_URLS = [
   '/api/v1/skills/categories',
-  '/api/v1/skills'
+  '/api/v1/skills',
+  '/api/v1/community/posts',
+  '/api/v1/marketplace/items',
+  '/api/v1/search/suggestions'
 ]
 
 // Install event - cache static assets

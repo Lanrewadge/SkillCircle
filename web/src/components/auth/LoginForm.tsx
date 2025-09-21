@@ -122,6 +122,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
                 className={`pl-10 ${errors.email ? 'border-red-500' : ''}`}
                 disabled={isLoading}
                 autoComplete="email"
+                spellCheck={false}
+                data-lpignore="true"
               />
             </div>
             {errors.email && (
@@ -142,6 +144,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
                 className={`pl-10 pr-10 ${errors.password ? 'border-red-500' : ''}`}
                 disabled={isLoading}
                 autoComplete="current-password"
+                spellCheck={false}
+                data-lpignore="true"
               />
               <button
                 type="button"

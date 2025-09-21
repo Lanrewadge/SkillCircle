@@ -5,9 +5,104 @@ const jwt = require('jsonwebtoken');
 import { PrismaClient } from '@prisma/client';
 import { createError } from '../middleware/errorHandler';
 import { authenticate } from '../middleware/auth';
+import { emailService, generateVerificationCode, generateResetToken } from '../utils/emailService';
 
 const router = Router();
 const prisma = new PrismaClient();
+
+// Store verification codes temporarily (in production, use Redis or database)
+const verificationCodes = new Map<string, { code: string; expiresAt: Date }>();
+
+// Helper function to clean expired codes
+const cleanExpiredCodes = () => {
+  const now = new Date();
+  for (const [email, data] of verificationCodes.entries()) {
+    if (data.expiresAt < now) {
+      verificationCodes.delete(email);
+    }
+  }
+};
+
+// Send email verification code
+router.post('/send-verification', [
+  body('email').isEmail().normalizeEmail()
+], async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw createError(400, 'Invalid email address');
+    }
+
+    const { email } = req.body;
+
+    // Clean expired codes
+    cleanExpiredCodes();
+
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (existingUser) {
+      throw createError(409, 'User with this email already exists');
+    }
+
+    // Generate verification code
+    const code = generateVerificationCode();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Store code
+    verificationCodes.set(email, { code, expiresAt });
+
+    // Send email
+    await emailService.sendVerificationEmail(email, code);
+
+    res.json({
+      success: true,
+      message: 'Verification code sent to your email'
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Verify email code
+router.post('/verify-email', [
+  body('email').isEmail().normalizeEmail(),
+  body('code').isLength({ min: 6, max: 6 }).isNumeric()
+], async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw createError(400, 'Invalid email or verification code');
+    }
+
+    const { email, code } = req.body;
+
+    // Clean expired codes
+    cleanExpiredCodes();
+
+    // Check if code exists and is valid
+    const storedData = verificationCodes.get(email);
+    if (!storedData) {
+      throw createError(400, 'Verification code not found or expired');
+    }
+
+    if (storedData.code !== code) {
+      throw createError(400, 'Invalid verification code');
+    }
+
+    // Remove used code
+    verificationCodes.delete(email);
+
+    res.json({
+      success: true,
+      message: 'Email verified successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 // Register
 router.post('/register', [
@@ -195,6 +290,103 @@ router.get('/me', authenticate, async (req, res, next) => {
     res.json({
       success: true,
       data: user
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Forgot password - send reset email
+router.post('/forgot-password', [
+  body('email').isEmail().normalizeEmail()
+], async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw createError(400, 'Invalid email address');
+    }
+
+    const { email } = req.body;
+
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (!user) {
+      // Don't reveal if user exists or not
+      res.json({
+        success: true,
+        message: 'If an account with this email exists, we\'ve sent a password reset link'
+      });
+      return;
+    }
+
+    // Generate reset token
+    const resetToken = generateResetToken();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    // TODO: Store reset token in database
+    // For now, we'll store it in memory (not production-ready)
+    verificationCodes.set(`reset_${email}`, { code: resetToken, expiresAt });
+
+    // Send reset email
+    await emailService.sendPasswordResetEmail(email, resetToken);
+
+    res.json({
+      success: true,
+      message: 'If an account with this email exists, we\'ve sent a password reset link'
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Reset password
+router.post('/reset-password', [
+  body('token').notEmpty(),
+  body('password').isLength({ min: 8 })
+], async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw createError(400, 'Invalid token or password');
+    }
+
+    const { token, password } = req.body;
+
+    // Clean expired codes
+    cleanExpiredCodes();
+
+    // Find the email associated with this token
+    let userEmail = '';
+    for (const [key, data] of verificationCodes.entries()) {
+      if (key.startsWith('reset_') && data.code === token) {
+        userEmail = key.replace('reset_', '');
+        break;
+      }
+    }
+
+    if (!userEmail) {
+      throw createError(400, 'Invalid or expired reset token');
+    }
+
+    // Hash new password
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // Update user password
+    await prisma.user.update({
+      where: { email: userEmail },
+      data: { password: hashedPassword }
+    });
+
+    // Remove reset token
+    verificationCodes.delete(`reset_${userEmail}`);
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully'
     });
   } catch (error) {
     next(error);

@@ -1,0 +1,179 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "save": "Guardar",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "sort": "Ordenar",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "home": "Inicio",
+    "back": "Volver",
+    "close": "Cerrar",
+    "open": "Abrir",
+    "view": "Ver",
+    "share": "Compartir",
+    "like": "Me gusta",
+    "favorite": "Favorito",
+    "bookmark": "Marcador"
+  },
+  "navigation": {
+    "dashboard": "Panel",
+    "skills": "Habilidades",
+    "browse": "Explorar",
+    "create": "Crear",
+    "community": "Comunidad",
+    "marketplace": "Mercado",
+    "messages": "Mensajes",
+    "profile": "Perfil",
+    "settings": "Configuración",
+    "help": "Ayuda",
+    "logout": "Cerrar sesión"
+  },
+  "auth": {
+    "signIn": "Iniciar sesión",
+    "signUp": "Registrarse",
+    "logout": "Cerrar sesión",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar contraseña",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "resetPassword": "Restablecer contraseña",
+    "rememberMe": "Recuérdame",
+    "alreadyHaveAccount": "¿Ya tienes una cuenta?",
+    "dontHaveAccount": "¿No tienes una cuenta?",
+    "emailVerification": "Verificación de correo",
+    "verifyEmail": "Verificar correo",
+    "verificationCode": "Código de verificación",
+    "resendCode": "Reenviar código",
+    "passwordStrength": {
+      "weak": "Débil",
+      "fair": "Regular",
+      "good": "Buena",
+      "strong": "Fuerte"
+    },
+    "errors": {
+      "invalidEmail": "Por favor ingresa un correo electrónico válido",
+      "passwordTooShort": "La contraseña debe tener al menos 8 caracteres",
+      "passwordMismatch": "Las contraseñas no coinciden",
+      "emailAlreadyExists": "Ya existe una cuenta con este correo electrónico",
+      "invalidCredentials": "Correo o contraseña inválidos",
+      "accountNotVerified": "Por favor verifica tu dirección de correo electrónico"
+    }
+  },
+  "skills": {
+    "title": "Habilidades",
+    "browse": "Explorar habilidades",
+    "create": "Crear habilidad",
+    "teach": "Enseñar esta habilidad",
+    "learn": "Aprender esta habilidad",
+    "category": "Categoría",
+    "level": "Nivel",
+    "duration": "Duración",
+    "price": "Precio",
+    "rating": "Calificación",
+    "reviews": "Reseñas",
+    "students": "Estudiantes",
+    "instructor": "Instructor",
+    "description": "Descripción",
+    "requirements": "Requisitos",
+    "outcomes": "Resultados de aprendizaje",
+    "curriculum": "Currículo",
+    "levels": {
+      "beginner": "Principiante",
+      "intermediate": "Intermedio",
+      "advanced": "Avanzado",
+      "expert": "Experto"
+    },
+    "categories": {
+      "technology": "Tecnología",
+      "business": "Negocios",
+      "creative": "Artes creativas",
+      "academic": "Académico",
+      "language": "Idiomas",
+      "health": "Salud y fitness",
+      "lifestyle": "Estilo de vida",
+      "music": "Música",
+      "cooking": "Cocina"
+    }
+  },
+  "community": {
+    "title": "Comunidad",
+    "posts": "Publicaciones",
+    "groups": "Grupos de estudio",
+    "events": "Eventos",
+    "discussions": "Discusiones",
+    "createPost": "Crear publicación",
+    "joinGroup": "Unirse al grupo",
+    "attendEvent": "Asistir al evento",
+    "share": "Compartir",
+    "comment": "Comentar",
+    "reply": "Responder",
+    "like": "Me gusta",
+    "follow": "Seguir",
+    "unfollow": "Dejar de seguir",
+    "members": "Miembros",
+    "online": "En línea",
+    "offline": "Desconectado"
+  },
+  "marketplace": {
+    "title": "Mercado",
+    "browse": "Explorar mercado",
+    "courses": "Cursos",
+    "ebooks": "Libros electrónicos",
+    "templates": "Plantillas",
+    "tools": "Herramientas",
+    "addToCart": "Agregar al carrito",
+    "buyNow": "Comprar ahora",
+    "cart": "Carrito de compras",
+    "checkout": "Finalizar compra",
+    "payment": "Pago",
+    "orderHistory": "Historial de pedidos",
+    "downloads": "Descargas",
+    "refund": "Reembolso",
+    "bestseller": "Más vendido",
+    "onSale": "En oferta",
+    "free": "Gratis",
+    "premium": "Premium"
+  },
+  "search": {
+    "placeholder": "Buscar habilidades, cursos o instructores...",
+    "results": "Resultados de búsqueda",
+    "noResults": "No se encontraron resultados",
+    "filters": "Filtros",
+    "sortBy": "Ordenar por",
+    "relevance": "Relevancia",
+    "rating": "Calificación",
+    "price": "Precio",
+    "newest": "Más reciente",
+    "popular": "Más popular",
+    "advanced": "Búsqueda avanzada",
+    "suggestions": "Sugerencias",
+    "recentSearches": "Búsquedas recientes"
+  },
+  "time": {
+    "just_now": "Ahora mismo",
+    "minutes_ago": {
+      "one": "hace {{count}} minuto",
+      "other": "hace {{count}} minutos"
+    },
+    "hours_ago": {
+      "one": "hace {{count}} hora",
+      "other": "hace {{count}} horas"
+    },
+    "days_ago": {
+      "one": "hace {{count}} día",
+      "other": "hace {{count}} días"
+    },
+    "weeks_ago": {
+      "one": "hace {{count}} semana",
+      "other": "hace {{count}} semanas"
+    }
+  }
+}
