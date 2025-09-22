@@ -13,8 +13,6 @@ const featuredCourses = [
     instructor: "Angela Yu",
     rating: 4.7,
     reviews: 267634,
-    price: "$94.99",
-    originalPrice: "$199.99",
     image: "/api/placeholder/300/200",
     category: "Development",
     level: "Beginner",
@@ -28,8 +26,6 @@ const featuredCourses = [
     instructor: "Jonas Schmedtmann",
     rating: 4.6,
     reviews: 151438,
-    price: "$89.99",
-    originalPrice: "$199.99",
     image: "/api/placeholder/300/200",
     category: "Development",
     level: "Intermediate",
@@ -43,8 +39,6 @@ const featuredCourses = [
     instructor: "Maximilian Schwarzmüller",
     rating: 4.6,
     reviews: 184329,
-    price: "$94.99",
-    originalPrice: "$199.99",
     image: "/api/placeholder/300/200",
     category: "Development",
     level: "Intermediate",
@@ -58,8 +52,6 @@ const featuredCourses = [
     instructor: "Jose Portilla",
     rating: 4.5,
     reviews: 112345,
-    price: "$84.99",
-    originalPrice: "$199.99",
     image: "/api/placeholder/300/200",
     category: "Data Science",
     level: "Intermediate",
@@ -186,12 +178,6 @@ export default function HomePage() {
                       {course.duration}
                     </span>
                     <span className="text-xs text-gray-500">• {course.level}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <span className="font-bold text-gray-900 dark:text-white">{course.price}</span>
-                      <span className="text-sm text-gray-500 line-through">{course.originalPrice}</span>
-                    </div>
                   </div>
                 </CardContent>
               </Card>

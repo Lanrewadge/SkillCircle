@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import InteractiveRoadmap from '@/components/roadmap/InteractiveRoadmap'
 import { roadmapDatabase } from '@/data/roadmaps'
+import { getSkillById } from '@/data/skills'
+import { DocumentManager } from '@/components/skills/DocumentManager'
 import {
   Star,
   Users,
@@ -62,8 +64,6 @@ By the end of this course, you'll have the skills and confidence to build profes
     students: 12000,
     duration: '12 weeks',
     totalHours: 48,
-    price: 129,
-    discountPrice: 89,
     instructor: {
       name: 'Sarah Johnson',
       avatar: '/instructors/sarah.jpg',
@@ -264,22 +264,75 @@ By the end of this course, you'll have the skills and confidence to build profes
 
 export default function SkillDetailPage() {
   const params = useParams()
-  const skillId = parseInt(params.id as string)
-  const skill = skillData[skillId as keyof typeof skillData]
+  const skillId = params.id as string
+  const skill = getSkillById(skillId)
   const [activeTab, setActiveTab] = useState('overview')
   const [isEnrolled, setIsEnrolled] = useState(false)
 
-  if (!skill) {
+  // Fallback to hardcoded data if skill not found in database
+  const fallbackSkill = !skill && skillId === '1' ? skillData[1] : null
+
+  if (!skill && !fallbackSkill) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Skill not found</h1>
+          <p className="text-muted-foreground mb-4">
+            The skill you're looking for doesn't exist or has been removed.
+          </p>
           <Link href="/explore">
             <Button>Back to Explore</Button>
           </Link>
         </div>
       </div>
     )
+  }
+
+  // Use either the database skill or fallback skill
+  const currentSkill = skill || fallbackSkill
+
+  // Normalize skill data to work with both structures
+  const normalizedSkill = {
+    id: currentSkill?.id || skillId,
+    title: skill?.name || currentSkill?.title || 'Unknown Skill',
+    subtitle: skill?.description || currentSkill?.subtitle || '',
+    category: skill?.category?.name || currentSkill?.category || 'General',
+    subcategory: currentSkill?.subcategory || 'General',
+    description: skill?.description || currentSkill?.description || '',
+    longDescription: currentSkill?.longDescription || skill?.description || '',
+    level: currentSkill?.level || (skill?.levels?.[0]?.level || 'Beginner'),
+    rating: currentSkill?.rating || 4.5,
+    reviewCount: currentSkill?.reviewCount || 0,
+    students: currentSkill?.students || 0,
+    duration: currentSkill?.duration || 'Self-paced',
+    totalHours: currentSkill?.totalHours || 40,
+    trending: currentSkill?.trending || false,
+    difficulty: currentSkill?.difficulty || 'Intermediate',
+    language: currentSkill?.language || 'English',
+    lastUpdated: currentSkill?.lastUpdated || '2024-01-15',
+    certificate: currentSkill?.certificate || true,
+    prerequisites: skill?.prerequisites || currentSkill?.prerequisites || [],
+    tags: currentSkill?.tags || [],
+    features: currentSkill?.features || [
+      'Self-paced learning',
+      'Practical exercises',
+      'Certificate of completion',
+      'Community support'
+    ],
+    roadmap: currentSkill?.roadmap || skill?.roadmap || [],
+    reviews: currentSkill?.reviews || [],
+    upcomingMeetings: currentSkill?.upcomingMeetings || [],
+    instructor: currentSkill?.instructor || {
+      name: 'Expert Instructor',
+      avatar: '/instructors/default.jpg',
+      title: 'Professional Instructor',
+      rating: 4.8,
+      students: 1000,
+      courses: 5,
+      bio: 'Experienced professional with expertise in this field.',
+      experience: '5+ years',
+      specialties: ['Teaching', 'Professional Development']
+    }
   }
 
   const handleEnroll = () => {
@@ -309,50 +362,50 @@ export default function SkillDetailPage() {
               <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
                 <Link href="/explore" className="hover:text-foreground">Explore</Link>
                 <ChevronRight className="w-4 h-4" />
-                <Link href="/explore/technology" className="hover:text-foreground">{skill.category}</Link>
+                <Link href="/explore/technology" className="hover:text-foreground">{normalizedSkill.category}</Link>
                 <ChevronRight className="w-4 h-4" />
-                <span className="text-foreground">{skill.title}</span>
+                <span className="text-foreground">{normalizedSkill.title}</span>
               </nav>
 
               {/* Title & Meta */}
               <div className="mb-8">
                 <div className="flex flex-wrap gap-2 mb-4">
                   <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
-                    {skill.subcategory}
+                    {normalizedSkill.subcategory}
                   </Badge>
-                  {skill.trending && (
+                  {normalizedSkill.trending && (
                     <Badge className="bg-red-500 text-white">
                       🔥 Trending
                     </Badge>
                   )}
-                  <Badge variant="outline">{skill.level}</Badge>
+                  <Badge variant="outline">{normalizedSkill.level}</Badge>
                 </div>
 
                 <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                  {skill.title}
+                  {normalizedSkill.title}
                 </h1>
                 <p className="text-xl text-muted-foreground mb-6">
-                  {skill.subtitle}
+                  {normalizedSkill.subtitle}
                 </p>
 
                 {/* Stats */}
                 <div className="flex flex-wrap items-center gap-6 text-sm">
                   <div className="flex items-center gap-1">
                     <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    <span className="font-medium">{skill.rating}</span>
-                    <span className="text-muted-foreground">({skill.reviewCount} reviews)</span>
+                    <span className="font-medium">{normalizedSkill.rating}</span>
+                    <span className="text-muted-foreground">({normalizedSkill.reviewCount} reviews)</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Users className="w-4 h-4 text-muted-foreground" />
-                    <span>{skill.students.toLocaleString()} students</span>
+                    <span>{normalizedSkill.students.toLocaleString()} students</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Clock className="w-4 h-4 text-muted-foreground" />
-                    <span>{skill.totalHours} hours</span>
+                    <span>{normalizedSkill.totalHours} hours</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <span>Updated {skill.lastUpdated}</span>
+                    <span>Updated {normalizedSkill.lastUpdated}</span>
                   </div>
                 </div>
               </div>
@@ -365,29 +418,29 @@ export default function SkillDetailPage() {
                 <CardContent>
                   <div className="flex items-start gap-4">
                     <Avatar className="w-16 h-16">
-                      <AvatarImage src={skill.instructor.avatar} />
-                      <AvatarFallback>{skill.instructor.name[0]}</AvatarFallback>
+                      <AvatarImage src={normalizedSkill.instructor.avatar} />
+                      <AvatarFallback>{normalizedSkill.instructor.name[0]}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <h3 className="font-bold text-lg">{skill.instructor.name}</h3>
-                      <p className="text-muted-foreground mb-2">{skill.instructor.title}</p>
+                      <h3 className="font-bold text-lg">{normalizedSkill.instructor.name}</h3>
+                      <p className="text-muted-foreground mb-2">{normalizedSkill.instructor.title}</p>
                       <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-3">
                         <div className="flex items-center gap-1">
                           <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                          <span>{skill.instructor.rating} rating</span>
+                          <span>{normalizedSkill.instructor.rating} rating</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Users className="w-4 h-4" />
-                          <span>{skill.instructor.students.toLocaleString()} students</span>
+                          <span>{normalizedSkill.instructor.students.toLocaleString()} students</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <BookOpen className="w-4 h-4" />
-                          <span>{skill.instructor.courses} courses</span>
+                          <span>{normalizedSkill.instructor.courses} courses</span>
                         </div>
                       </div>
-                      <p className="text-sm text-muted-foreground mb-3">{skill.instructor.bio}</p>
+                      <p className="text-sm text-muted-foreground mb-3">{normalizedSkill.instructor.bio}</p>
                       <div className="flex flex-wrap gap-1">
-                        {skill.instructor.specialties.map((specialty, idx) => (
+                        {normalizedSkill.instructor.specialties.map((specialty, idx) => (
                           <Badge key={idx} variant="secondary" className="text-xs">
                             {specialty}
                           </Badge>
@@ -400,9 +453,10 @@ export default function SkillDetailPage() {
 
               {/* Tabs */}
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-5">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="roadmap">Roadmap</TabsTrigger>
+                  <TabsTrigger value="documents">Documents</TabsTrigger>
                   <TabsTrigger value="meetings">Study Groups</TabsTrigger>
                   <TabsTrigger value="reviews">Reviews</TabsTrigger>
                 </TabsList>
@@ -416,7 +470,7 @@ export default function SkillDetailPage() {
                     <CardContent>
                       <div className="prose prose-gray dark:prose-invert max-w-none">
                         <p className="text-muted-foreground whitespace-pre-line">
-                          {skill.longDescription}
+                          {normalizedSkill.longDescription}
                         </p>
                       </div>
                     </CardContent>
@@ -428,7 +482,7 @@ export default function SkillDetailPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {skill.features.map((feature, idx) => (
+                        {normalizedSkill.features.map((feature, idx) => (
                           <div key={idx} className="flex items-center gap-2">
                             <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
                             <span className="text-sm">{feature}</span>
@@ -444,7 +498,7 @@ export default function SkillDetailPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
-                        {skill.prerequisites.map((prereq, idx) => (
+                        {normalizedSkill.prerequisites.map((prereq, idx) => (
                           <div key={idx} className="flex items-center gap-2">
                             <Lightbulb className="w-4 h-4 text-yellow-500" />
                             <span className="text-sm">{prereq}</span>
@@ -460,11 +514,11 @@ export default function SkillDetailPage() {
                   {(() => {
                     // Map skillId to roadmap type
                     let roadmapType = 'devops'
-                    if (skillId === 1) roadmapType = 'react'
-                    else if (skill.subcategory === 'Web Development') roadmapType = 'react'
-                    else if (skill.category.includes('Medical')) roadmapType = 'nursing'
-                    else if (skill.category.includes('Engineering')) roadmapType = 'mechanical-engineering'
-                    else if (skill.category.includes('Fashion')) roadmapType = 'fashion-design'
+                    if (skillId === '1' || skillId === 'react-development') roadmapType = 'react'
+                    else if (normalizedSkill.subcategory === 'Web Development') roadmapType = 'react'
+                    else if (normalizedSkill.category.includes('Medical')) roadmapType = 'nursing'
+                    else if (normalizedSkill.category.includes('Engineering')) roadmapType = 'mechanical-engineering'
+                    else if (normalizedSkill.category.includes('Fashion')) roadmapType = 'fashion-design'
 
                     const roadmapData = roadmapDatabase[roadmapType as keyof typeof roadmapDatabase]
 
@@ -482,13 +536,22 @@ export default function SkillDetailPage() {
                             <Target className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                             <h3 className="font-medium text-lg mb-2">Interactive Roadmap Coming Soon</h3>
                             <p className="text-muted-foreground">
-                              We're working on creating an interactive roadmap for this skill. Check back soon!
+                              We're working on creating an interactive roadmap for this normalizedSkill. Check back soon!
                             </p>
                           </CardContent>
                         </Card>
                       )
                     }
                   })()}
+                </TabsContent>
+
+                {/* Documents Tab */}
+                <TabsContent value="documents" className="space-y-6">
+                  <DocumentManager
+                    skillId={skillId}
+                    userRole="student" // This would come from user context
+                    userId="current-user-id" // This would come from user context
+                  />
                 </TabsContent>
 
                 {/* Study Groups Tab */}
@@ -513,7 +576,7 @@ export default function SkillDetailPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
-                        {skill.upcomingMeetings.map((meeting) => (
+                        {normalizedSkill.upcomingMeetings.map((meeting) => (
                           <Card key={meeting.id} className="hover:shadow-md transition-shadow">
                             <CardContent className="p-6">
                               <div className="flex justify-between items-start mb-4">
@@ -573,7 +636,7 @@ export default function SkillDetailPage() {
                           </Card>
                         ))}
 
-                        {skill.upcomingMeetings.length === 0 && (
+                        {normalizedSkill.upcomingMeetings.length === 0 && (
                           <div className="text-center py-8">
                             <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                             <h3 className="font-medium text-lg mb-2">No upcoming meetings</h3>
@@ -601,7 +664,7 @@ export default function SkillDetailPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-6">
-                        {skill.reviews.map((review) => (
+                        {normalizedSkill.reviews.map((review) => (
                           <div key={review.id} className="border-b border-border pb-6 last:border-b-0">
                             <div className="flex items-start gap-4">
                               <Avatar>
@@ -646,17 +709,6 @@ export default function SkillDetailPage() {
                 {/* Enrollment Card */}
                 <Card className="mb-6">
                   <CardContent className="p-6">
-                    <div className="text-center mb-6">
-                      <div className="text-3xl font-bold text-green-600 mb-2">
-                        ${skill.discountPrice}
-                        <span className="text-lg text-muted-foreground line-through ml-2">
-                          ${skill.price}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Limited time offer
-                      </p>
-                    </div>
 
                     {isEnrolled ? (
                       <div className="space-y-3">
@@ -701,7 +753,7 @@ export default function SkillDetailPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {skill.features.slice(0, 6).map((feature, idx) => (
+                      {normalizedSkill.features.slice(0, 6).map((feature, idx) => (
                         <div key={idx} className="flex items-center gap-2 text-sm">
                           <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                           <span>{feature}</span>
@@ -718,7 +770,7 @@ export default function SkillDetailPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
-                      {skill.tags.map((tag, idx) => (
+                      {normalizedSkill.tags.map((tag, idx) => (
                         <Badge key={idx} variant="secondary" className="text-xs">
                           {tag}
                         </Badge>

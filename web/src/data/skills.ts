@@ -940,3 +940,23 @@ export const allSkills: Skill[] = [
   ...businessSkills,
   ...cookingSkills
 ]
+
+// Function to get skill by ID
+export function getSkillById(id: string): Skill | undefined {
+  return allSkills.find(skill => skill.id === id)
+}
+
+// Function to get skills by category
+export function getSkillsByCategory(categoryId: string): Skill[] {
+  return allSkills.filter(skill => skill.category.id === categoryId)
+}
+
+// Function to search skills
+export function searchSkills(query: string): Skill[] {
+  const lowercaseQuery = query.toLowerCase()
+  return allSkills.filter(skill =>
+    skill.name.toLowerCase().includes(lowercaseQuery) ||
+    skill.description.toLowerCase().includes(lowercaseQuery) ||
+    skill.category.name.toLowerCase().includes(lowercaseQuery)
+  )
+}

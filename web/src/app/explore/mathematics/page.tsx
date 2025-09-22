@@ -23,7 +23,6 @@ import {
   Triangle,
   CircleDot,
   Sigma,
-  Function,
   Divide,
   Plus,
   Minus,
@@ -252,7 +251,7 @@ const mathSubcategories = [
   {
     id: 'calculus',
     name: 'Calculus',
-    icon: <Function className="w-6 h-6" />,
+    icon: <Calculator className="w-6 h-6" />,
     description: 'Derivatives, integrals, limits, and applications of continuous change',
     skillCount: 95,
     color: 'bg-blue-500',
@@ -666,7 +665,7 @@ export default function MathematicsPage() {
                       </Badge>
                     </div>
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <Function className="w-16 h-16 text-white/50" />
+                      <Calculator className="w-16 h-16 text-white/50" />
                     </div>
                   </div>
 
@@ -1088,7 +1087,7 @@ export default function MathematicsPage() {
                       <h4 className="font-medium">Mathematics Session Types:</h4>
                       <div className="space-y-2">
                         <Button variant="outline" className="w-full justify-start">
-                          <Function className="w-4 h-4 mr-2" />
+                          <Calculator className="w-4 h-4 mr-2" />
                           Calculus Study Group
                         </Button>
                         <Button variant="outline" className="w-full justify-start">
@@ -1184,7 +1183,7 @@ export default function MathematicsPage() {
             <Card className="group hover:shadow-xl transition-all duration-300">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Function className="w-5 h-5" />
+                  <Calculator className="w-5 h-5" />
                   3D Graphing Calculator
                 </CardTitle>
               </CardHeader>

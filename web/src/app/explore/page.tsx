@@ -30,8 +30,7 @@ import {
   Shield,
   Brain,
   ChevronRight,
-  MapPin,
-  DollarSign
+  MapPin
 } from 'lucide-react'
 
 const skillCategories = [
@@ -242,7 +241,6 @@ const featuredSkills = [
     rating: 4.9,
     students: 1200,
     duration: '8 weeks',
-    price: 89,
     instructor: 'Sarah Johnson',
     description: 'Master modern React with hooks, context, and best practices',
     thumbnail: '/skills/react.jpg',
@@ -257,7 +255,6 @@ const featuredSkills = [
     rating: 4.8,
     students: 850,
     duration: '12 weeks',
-    price: 65,
     instructor: 'Maria Rodriguez',
     description: 'Speak Spanish confidently in everyday situations',
     thumbnail: '/skills/spanish.jpg',
@@ -272,7 +269,6 @@ const featuredSkills = [
     rating: 4.7,
     students: 2100,
     duration: '10 weeks',
-    price: 120,
     instructor: 'Alex Chen',
     description: 'Design beautiful and user-friendly interfaces',
     thumbnail: '/skills/uxui.jpg',
@@ -287,7 +283,6 @@ const featuredSkills = [
     rating: 4.6,
     students: 680,
     duration: '6 weeks',
-    price: 45,
     instructor: 'Mike Thompson',
     description: 'Learn to play your favorite songs on acoustic guitar',
     thumbnail: '/skills/guitar.jpg',
@@ -302,7 +297,6 @@ const featuredSkills = [
     rating: 4.8,
     students: 920,
     duration: '4 weeks',
-    price: 75,
     instructor: 'Giuseppe Romano',
     description: 'Master authentic Italian recipes and techniques',
     thumbnail: '/skills/cooking.jpg',
@@ -317,7 +311,6 @@ const featuredSkills = [
     rating: 4.9,
     students: 1500,
     duration: '8 weeks',
-    price: 95,
     instructor: 'Jennifer Davis',
     description: 'Build strength, endurance, and achieve your fitness goals',
     thumbnail: '/skills/fitness.jpg',
@@ -477,7 +470,6 @@ export default function ExplorePage() {
                 <option value="popular">Most Popular</option>
                 <option value="rating">Highest Rated</option>
                 <option value="newest">Newest</option>
-                <option value="price">Price: Low to High</option>
               </select>
             </div>
           </div>
@@ -561,13 +553,9 @@ export default function ExplorePage() {
                       </div>
                     </div>
 
-                    {/* Price and CTA */}
-                    <div className="flex justify-between items-center pt-2 border-t border-border">
-                      <div className="flex items-center gap-1">
-                        <DollarSign className="w-4 h-4 text-green-600" />
-                        <span className="text-lg font-bold text-green-600">${skill.price}</span>
-                      </div>
-                      <Button size="sm" className="group-hover:bg-blue-600 transition-colors">
+                    {/* CTA */}
+                    <div className="flex justify-center items-center pt-2 border-t border-border">
+                      <Button size="sm" className="group-hover:bg-blue-600 transition-colors w-full">
                         Start Learning
                       </Button>
                     </div>
